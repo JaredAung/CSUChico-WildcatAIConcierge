@@ -66,7 +66,7 @@ function ChatContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const [sessionId] = useState<string>(() => uuidv4())
+  const [sessionId, setSessionId] = useState<string>(() => uuidv4())
   const [messages, setMessages] = useState<DisplayMessage[]>([buildWelcomeMessage()])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -124,6 +124,11 @@ function ChatContent() {
 
       try {
         const response: ChatResponse = await sendMessage(history, sessionId)
+
+        // Keep Bedrock sessionId so later turns share answer/citation history.
+        if (response.session_id && response.session_id !== sessionId) {
+          setSessionId(response.session_id)
+        }
 
         const assistantMsg: DisplayMessage = {
           id: uuidv4(),

@@ -1,22 +1,20 @@
 /**
- * API Gateway → Lambda → Bedrock (Node.js)
+ * API Gateway → Lambda → Bedrock Agent (Node.js)
  *
  * GET  /api/v1/health
- * POST /api/v1/chat
+ * POST /api/v1/chat  (InvokeAgent — answer + citations; multi-turn via sessionId)
  */
 
 import { randomUUID } from 'node:crypto'
 import {
-  BedrockRuntimeClient,
-  ConverseCommand,
-} from '@aws-sdk/client-bedrock-runtime'
-import { SYSTEM_PROMPT } from './prompt.mjs'
+  BedrockAgentRuntimeClient,
+  InvokeAgentCommand,
+} from '@aws-sdk/client-bedrock-agent-runtime'
 
-// #Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
-const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-5'
 const BEDROCK_REGION =
   process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-west-2'
-const MAX_TOKENS = Number.parseInt(process.env.BEDROCK_MAX_TOKENS || '1024', 10)
+const AGENT_ID = (process.env.BEDROCK_AGENT_ID || '').trim()
+const AGENT_ALIAS_ID = (process.env.BEDROCK_AGENT_ALIAS_ID || '').trim()
 
 if (process.env.BEDROCK_API_KEY && !process.env.AWS_BEARER_TOKEN_BEDROCK) {
   process.env.AWS_BEARER_TOKEN_BEDROCK = process.env.BEDROCK_API_KEY
@@ -29,13 +27,15 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 }
 
-let bedrockClient
+const textDecoder = new TextDecoder('utf-8')
 
-function getBedrock() {
-  if (!bedrockClient) {
-    bedrockClient = new BedrockRuntimeClient({ region: BEDROCK_REGION })
+let agentClient
+
+function getAgentRuntime() {
+  if (!agentClient) {
+    agentClient = new BedrockAgentRuntimeClient({ region: BEDROCK_REGION })
   }
-  return bedrockClient
+  return agentClient
 }
 
 function response(statusCode, body) {
@@ -74,85 +74,127 @@ function methodOf(event) {
   ).toUpperCase()
 }
 
-function toBedrockMessages(messages) {
-  const converted = []
-  for (const msg of messages) {
-    const role = msg?.role
-    const content = String(msg?.content || '').trim()
-    if ((role !== 'user' && role !== 'assistant') || !content) continue
-    converted.push({
-      role,
-      content: [{ text: content }],
-    })
-  }
-
-  while (converted.length && converted[0].role !== 'user') {
-    converted.shift()
-  }
-
-  const merged = []
-  for (const msg of converted) {
-    const last = merged[merged.length - 1]
-    if (last && last.role === msg.role) {
-      last.content.push(...msg.content)
-    } else {
-      merged.push(msg)
+function lastUserText(messages) {
+  if (!Array.isArray(messages)) return ''
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    if (msg?.role === 'user') {
+      const text = String(msg.content || '').trim()
+      if (text) return text
     }
   }
-  return merged
+  return ''
 }
 
-function extractText(converseResponse) {
-  const parts = converseResponse?.output?.message?.content || []
-  const texts = parts
-    .filter((p) => p && typeof p.text === 'string')
-    .map((p) => p.text)
-  return (
-    texts.join('\n').trim() ||
-    "I wasn't able to generate a response. Please try again."
-  )
+/** Map Agent / KB citation refs → frontend Source[]. */
+function referencesToSources(citations) {
+  const sources = []
+  const seen = new Set()
+
+  for (const citation of citations || []) {
+    for (const ref of citation.retrievedReferences || []) {
+      const uri =
+        ref.location?.s3Location?.uri ||
+        ref.location?.webLocation?.url ||
+        ref.location?.confluenceLocation?.url ||
+        ref.location?.salesforceLocation?.url ||
+        ref.location?.sharePointLocation?.url ||
+        ''
+      const excerpt = String(ref.content?.text || '').trim()
+      const metadataTitle =
+        ref.metadata?.['x-amz-bedrock-kb-source-uri'] ||
+        ref.metadata?.title ||
+        ''
+      const title =
+        String(metadataTitle || '').trim() ||
+        (uri ? uri.split('/').pop() : '') ||
+        'Campus document'
+      const key = `${uri}|${title}|${excerpt.slice(0, 80)}`
+      if (seen.has(key)) continue
+      seen.add(key)
+
+      const scoreRaw = ref.metadata?.['x-amz-bedrock-kb-score']
+      const score = Number(scoreRaw)
+      sources.push({
+        title,
+        url: uri,
+        excerpt: excerpt ? excerpt.slice(0, 400) : undefined,
+        ...(Number.isFinite(score) ? { relevance_score: score } : {}),
+      })
+    }
+  }
+  return sources
+}
+
+/** Consume InvokeAgent completion stream: answer bytes + attribution citations. */
+async function consumeAgentCompletion(completion) {
+  let answer = ''
+  const citations = []
+
+  if (!completion) {
+    return { answer, citations }
+  }
+
+  for await (const event of completion) {
+    const chunk = event.chunk
+    if (chunk?.bytes) {
+      answer += textDecoder.decode(chunk.bytes)
+    }
+    const chunkCitations = chunk?.attribution?.citations
+    if (Array.isArray(chunkCitations) && chunkCitations.length) {
+      citations.push(...chunkCitations)
+    }
+  }
+
+  return { answer: answer.trim(), citations }
 }
 
 async function handleChat(body) {
-  const messages = body?.messages
-  if (!Array.isArray(messages) || messages.length === 0) {
+  if (!AGENT_ID || !AGENT_ALIAS_ID) {
+    return response(500, {
+      detail:
+        'BEDROCK_AGENT_ID and BEDROCK_AGENT_ALIAS_ID must be set. Redeploy with agent parameters.',
+    })
+  }
+
+  const query = lastUserText(body?.messages)
+  if (!query) {
     return response(400, {
-      detail: 'Request must include a non-empty messages array.',
+      detail: 'Request must include a non-empty user message.',
     })
   }
 
   const sessionId = body.session_id || randomUUID()
-  const bedrockMessages = toBedrockMessages(messages)
-  if (!bedrockMessages.length) {
-    return response(400, { detail: 'No valid user/assistant messages found.' })
-  }
 
   try {
-    const result = await getBedrock().send(
-      new ConverseCommand({
-        modelId: MODEL_ID,
-        system: [{ text: SYSTEM_PROMPT }],
-        messages: bedrockMessages,
-        // Claude Sonnet 5 rejects temperature (deprecated for this model).
-        inferenceConfig: {
-          maxTokens: MAX_TOKENS,
-        },
+    const result = await getAgentRuntime().send(
+      new InvokeAgentCommand({
+        agentId: AGENT_ID,
+        agentAliasId: AGENT_ALIAS_ID,
+        sessionId,
+        inputText: query,
+        enableTrace: false,
       }),
     )
 
+    const { answer, citations } = await consumeAgentCompletion(result.completion)
+    const sources = referencesToSources(citations)
+
     return response(200, {
-      answer: extractText(result),
-      sources: [],
+      answer:
+        answer ||
+        "I wasn't able to generate a response. Please try again.",
+      sources,
       session_id: sessionId,
-      model_used: MODEL_ID,
+      model_used: `bedrock-agent:${AGENT_ID}`,
       is_mock: false,
     })
   } catch (err) {
     const code = err?.name || err?.Code || 'Error'
     const message = err?.message || String(err)
-    console.error('Bedrock invocation failed', code, err)
+    console.error('InvokeAgent failed', code, err)
     return response(502, {
-      detail: `Bedrock request failed (${code}): ${message}`,
+      detail: `Agent request failed (${code}): ${message}`,
     })
   }
 }
@@ -168,10 +210,12 @@ export async function handler(event) {
 
   if (method === 'GET' && (path === '/api/v1/health' || path === '/health')) {
     return response(200, {
-      status: 'ok',
-      model: MODEL_ID,
+      status: AGENT_ID && AGENT_ALIAS_ID ? 'ok' : 'misconfigured',
       region: BEDROCK_REGION,
       runtime: 'nodejs',
+      agent_id: AGENT_ID || null,
+      agent_alias_id: AGENT_ALIAS_ID || null,
+      mode: 'agent',
     })
   }
 

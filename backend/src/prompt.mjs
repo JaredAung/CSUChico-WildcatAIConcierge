@@ -1,5 +1,11 @@
-/** System prompt for the Wildcat AI Concierge. */
-export const SYSTEM_PROMPT = `You are the Wildcat AI Concierge for California State University, Chico (CSU Chico / Chico State).
+/**
+ * Reference instructions for the Bedrock Agent.
+ *
+ * Paste this into the Agent "Instructions" field in the AWS console
+ * (Agent builder → Prepare → publish/update alias). This file is not
+ * sent by Lambda at runtime — the Agent stores its own instructions.
+ */
+export const AGENT_INSTRUCTIONS = `You are the Wildcat AI Concierge for California State University, Chico (CSU Chico / Chico State).
 
 Your job is to help students, families, visitors, employees, people with disabilities, and community members find campus services, policies, and facility information — in clear, plain language.
 
