@@ -545,9 +545,9 @@ class RAGEngine:
                 "department directly for assistance."
             )
 
-        # Use the top-3 most relevant chunks
-        top_docs = documents[:3]
-        top_meta = metadatas[:3]
+        # Use the top-4 most relevant chunks by similarity
+        top_docs = documents[:4]
+        top_meta = metadatas[:4]
 
         if language == "es":
             intro = f"Aquí está lo que encontré sobre **{question.strip('?')}**:\n\n"
@@ -557,7 +557,7 @@ class RAGEngine:
         body_parts = []
         for doc, meta in zip(top_docs, top_meta):
             title = meta.get("title", "Campus Resource")
-            snippet = doc[:300].rstrip() + ("..." if len(doc) > 300 else "")
+            snippet = doc[:500].rstrip() + ("..." if len(doc) > 500 else "")
             body_parts.append(f"**{title}**: {snippet}")
 
         sources_note = ""

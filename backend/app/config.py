@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # ── RAG ───────────────────────────────────────────────────────────────────
     knowledge_base_dir: str = Field(default="./data/knowledge_base")
-    top_k_results: int = Field(default=5, ge=1, le=20)
+    top_k_results: int = Field(default=8, ge=1, le=20)
     confidence_threshold: float = Field(default=0.65, ge=0.0, le=1.0)
 
     # ── AWS Bedrock (production) ──────────────────────────────────────────────

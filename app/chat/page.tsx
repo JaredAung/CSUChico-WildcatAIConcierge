@@ -76,12 +76,17 @@ function ChatContent() {
   const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS)
 
   const bottomRef = useRef<HTMLDivElement>(null)
+  const lastAssistantRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const autoSentRef = useRef(false)
 
-  // Scroll to bottom whenever messages change
+  // Scroll to the start of the latest assistant reply so the user can read from the top
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (lastAssistantRef.current) {
+      lastAssistantRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages, isLoading])
 
   // Load suggested chips from API
@@ -294,8 +299,14 @@ function ChatContent() {
             aria-label="Chat conversation"
             aria-relevant="additions"
           >
-            {messages.map((msg) => (
-              <div key={msg.id} className="flex flex-col gap-2">
+            {messages.map((msg, idx) => {
+              // Determine if this is the last assistant message
+              const isLastAssistant =
+                msg.role === 'assistant' &&
+                idx === messages.map((m) => m.role).lastIndexOf('assistant')
+
+              return (
+              <div key={msg.id} ref={isLastAssistant ? lastAssistantRef : undefined} className="flex flex-col gap-2">
                 <MessageBubble
                   message={msg}
                   detectedLanguage={msg.meta?.detected_language}
@@ -318,7 +329,7 @@ function ChatContent() {
                   </div>
                 )}
               </div>
-            ))}
+            )})}
 
             {/* Typing indicator */}
             {isLoading && (

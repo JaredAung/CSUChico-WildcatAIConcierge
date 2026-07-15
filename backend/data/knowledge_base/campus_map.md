@@ -18,6 +18,9 @@ CSU Chico's main campus spans approximately 119 acres in Chico, California, bord
   - Search for buildings, departments, parking lots, and accessibility features
   - View indoor floor plans for select buildings
   - Get walking directions between campus locations
+- **Printable Campus Map (PDF):** [Download printable campus map](https://www.csuchico.edu/_assets/documents/office/admissions/printable-campus-map.pdf)
+  - Full campus layout with building names, streets, and landmarks
+  - Great for printing and carrying during campus visits
 - **Accessibility Route Maps:** [csuchico.edu/facilities/accessibility-maps](https://csuchico.edu/facilities/accessibility-maps)
   - Shows accessible pathways, ramps, curb cuts, and accessible building entrances
 
