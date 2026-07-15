@@ -52,3 +52,5 @@ Conversational access to campus services, policies, and facility resources.
 > "I'm deaf and want to attend a concert at Laxson Auditorium — how do I request an interpreter?"
 
 **Expected behavior:** Identify the event, explain the accommodation process, timelines, contacts, and link to request forms.
+
+## 

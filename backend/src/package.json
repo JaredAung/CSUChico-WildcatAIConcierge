@@ -1,0 +1,9 @@
+{
+  "name": "wildcat-ai-concierge-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.1087.0"
+  }
+}

@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary: CSU Chico Scarlet #CE1126 */
+    --primary: 352 86% 44%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: light neutral */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    /* Accent: CSU Chico Gold #FFC72C */
+    --accent: 42 100% 59%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 352 86% 44%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark theme */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary stays scarlet, slightly brightened for dark bg */
+    --primary: 352 86% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    /* Accent: Gold remains vibrant in dark mode */
+    --accent: 42 100% 59%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 352 86% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Focus-visible styles for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+
+  /* Prose styles for markdown rendering */
+  .prose {
+    @apply text-foreground;
+  }
+
+  .prose p {
+    @apply mb-3 last:mb-0;
+  }
+
+  .prose ul {
+    @apply list-disc pl-5 mb-3 space-y-1;
+  }
+
+  .prose ol {
+    @apply list-decimal pl-5 mb-3 space-y-1;
+  }
+
+  .prose li {
+    @apply text-foreground;
+  }
+
+  .prose a {
+    @apply text-primary underline underline-offset-4 hover:text-primary/80;
+  }
+
+  .prose strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .prose code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  .prose pre {
+    @apply bg-muted p-4 rounded-lg overflow-x-auto mb-3;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    @apply font-semibold text-foreground mb-2 mt-4 first:mt-0;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-primary pl-4 italic text-muted-foreground mb-3;
+  }
+
+  .prose hr {
+    @apply border-border my-4;
+  }
+
+  .prose table {
+    @apply w-full border-collapse mb-3;
+  }
+
+  .prose th {
+    @apply bg-muted text-left px-3 py-2 font-semibold border border-border;
+  }
+
+  .prose td {
+    @apply px-3 py-2 border border-border;
+  }
+}
+
+@layer utilities {
+  /* Chat bubble animations */
+  .chat-bubble-user {
+    @apply animate-slide-in-right;
+  }
+
+  .chat-bubble-assistant {
+    @apply animate-slide-in-left;
+  }
+
+  /* Typing indicator dots */
+  .typing-dot {
+    @apply w-2 h-2 rounded-full bg-muted-foreground animate-pulse-soft;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+}
