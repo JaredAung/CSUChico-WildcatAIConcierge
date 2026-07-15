@@ -1,0 +1,22 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "wildcat-ai-concierge"
+region = "us-west-2"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+region = "us-west-2"
+#Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
+parameter_overrides = "BedrockModelId=\"us.anthropic.claude-sonnet-5\" BedrockRegion=\"us-west-2\" CorsAllowOrigin=\"*\""
+s3_prefix = "wildcat-ai-concierge"
+image_repositories = []
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"

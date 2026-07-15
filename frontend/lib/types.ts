@@ -106,22 +106,6 @@ export interface ChatResponse {
   model_used?: string
 }
 
-// ─── Knowledge Endpoints ───────────────────────────────────────────────────────
-
-/**
- * Response from GET /api/backend/knowledge/suggested-questions
- */
-export interface SuggestedQuestionsResponse {
-  questions: string[]
-}
-
-/**
- * Response from GET /api/backend/knowledge/departments
- */
-export interface DepartmentsResponse {
-  departments: Department[]
-}
-
 // ─── UI State ─────────────────────────────────────────────────────────────────
 
 /** Represents the loading/error state of an async operation */

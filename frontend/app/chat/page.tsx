@@ -22,7 +22,7 @@ import { WorkflowCard } from '@/components/chat/WorkflowCard'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DarkModeToggle } from '@/components/layout/Header'
-import { sendMessage, getSuggestedQuestions } from '@/lib/api'
+import { sendMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { ChatMessage, ChatResponse, Source, Department, WorkflowCard as WorkflowCardType } from '@/lib/types'
 
@@ -72,7 +72,7 @@ function ChatContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS)
+  const chips = DEFAULT_CHIPS
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -82,15 +82,6 @@ function ChatContent() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
-
-  // Load suggested chips from API
-  useEffect(() => {
-    getSuggestedQuestions()
-      .then((qs) => {
-        if (qs.length > 0) setChips(qs.slice(0, 4))
-      })
-      .catch(() => {}) // keep defaults on failure
-  }, [])
 
   // Auto-send ?q= param once
   useEffect(() => {

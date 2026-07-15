@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Wildcat AI Concierge — API Gateway + Node.js Lambda + Bedrock
+
+Parameters:
+  #Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
+  BedrockModelId:
+    Type: String
+    Default: us.anthropic.claude-sonnet-5
+    Description: Bedrock inference profile ID for Converse API
+  BedrockRegion:
+    Type: String
+    Default: us-west-2
+    Description: Region where Bedrock model access is enabled
+  CorsAllowOrigin:
+    Type: String
+    Default: '*'
+    Description: Access-Control-Allow-Origin value for API responses
+
+Globals:
+  Function:
+    Timeout: 29
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Environment:
+      Variables:
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
+        BEDROCK_REGION: !Ref BedrockRegion
+        CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+
+Resources:
+  WildcatApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: Prod
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref CorsAllowOrigin
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - Accept
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        MaxAge: 600
+
+  ChatFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: wildcat-ai-concierge-chat
+      CodeUri: src/
+      Handler: handler.handler
+      Description: Chat + health endpoints backed by Amazon Bedrock (Node.js)
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+              # Includes foundation models and inference profiles (e.g. us.anthropic.*)
+              Resource: '*'
+      Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WildcatApi
+            Path: /api/v1/health
+            Method: GET
+        Chat:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WildcatApi
+            Path: /api/v1/chat
+            Method: POST
+        OptionsProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref WildcatApi
+            Path: /api/v1/{proxy+}
+            Method: OPTIONS
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API base URL for frontend BACKEND_URL (includes /Prod)
+    Value: !Sub '${WildcatApi.ApiEndpoint}/Prod'
+  ChatUrl:
+    Description: Chat endpoint
+    Value: !Sub '${WildcatApi.ApiEndpoint}/Prod/api/v1/chat'
+  HealthUrl:
+    Description: Health endpoint
+    Value: !Sub '${WildcatApi.ApiEndpoint}/Prod/api/v1/health'

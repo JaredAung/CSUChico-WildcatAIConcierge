@@ -1,17 +1,15 @@
-import type {
-  ChatMessage,
-  ChatRequest,
-  ChatResponse,
-  Department,
-  DepartmentsResponse,
-  SuggestedQuestionsResponse,
-} from '@/lib/types'
+import type { ChatMessage, ChatRequest, ChatResponse } from '@/lib/types'
 
 // ─── Base Configuration ────────────────────────────────────────────────────────
 
+/**
+ * Browser calls same-origin `/api/backend/*`, which Next.js rewrites to
+ * `BACKEND_URL/api/v1/*` (API Gateway after deploy, or local SAM on :8001).
+ */
 const BASE_URL = '/api/backend'
 
-const DEFAULT_TIMEOUT_MS = 30_000
+/** Bedrock round-trips can approach API Gateway's ~29s limit. */
+const DEFAULT_TIMEOUT_MS = 55_000
 
 // ─── Internal Helpers ──────────────────────────────────────────────────────────
 
@@ -106,60 +104,6 @@ export async function sendMessage(
   }
 
   return parseResponse<ChatResponse>(response)
-}
-
-/**
- * Fetches suggested starter questions for the chat interface.
- *
- * @returns Array of question strings.
- * @throws  ApiError on non-2xx responses, or Error on network failure.
- */
-export async function getSuggestedQuestions(): Promise<string[]> {
-  let response: Response
-  try {
-    response = await fetchWithTimeout(
-      `${BASE_URL}/knowledge/suggested-questions`,
-      {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      },
-    )
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out.', 408)
-    }
-    throw new ApiError('Unable to fetch suggested questions.')
-  }
-
-  const data = await parseResponse<SuggestedQuestionsResponse>(response)
-  return data.questions
-}
-
-/**
- * Fetches the list of CSU Chico departments from the knowledge base.
- *
- * @returns Array of Department objects.
- * @throws  ApiError on non-2xx responses, or Error on network failure.
- */
-export async function getDepartments(): Promise<Department[]> {
-  let response: Response
-  try {
-    response = await fetchWithTimeout(
-      `${BASE_URL}/knowledge/departments`,
-      {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      },
-    )
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new ApiError('Request timed out.', 408)
-    }
-    throw new ApiError('Unable to fetch departments.')
-  }
-
-  const data = await parseResponse<DepartmentsResponse>(response)
-  return data.departments
 }
 
 /**
