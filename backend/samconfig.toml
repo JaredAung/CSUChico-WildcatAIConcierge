@@ -14,7 +14,7 @@ confirm_changeset = true
 resolve_s3 = true
 region = "us-west-2"
 #Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
-parameter_overrides = "BedrockModelId=\"us.anthropic.claude-sonnet-5\" BedrockRegion=\"us-west-2\" CorsAllowOrigin=\"*\""
+parameter_overrides = "BedrockModelId=\"us.anthropic.claude-sonnet-5\" BedrockRegion=\"us-west-2\" CorsAllowOrigin=\"*\" KnowledgeBaseId=\"HWLRSGO6X8\" S3BucketName=\"kendra-webcrawler-test\""
 s3_prefix = "wildcat-ai-concierge"
 image_repositories = []
 

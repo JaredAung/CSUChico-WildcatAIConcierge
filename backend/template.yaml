@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Wildcat AI Concierge — API Gateway + Node.js Lambda + Bedrock
+Description: Wildcat AI Concierge — API Gateway + Node.js Lambda + Bedrock + S3 Downloader
 
 Parameters:
   #Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
@@ -16,6 +16,17 @@ Parameters:
     Type: String
     Default: '*'
     Description: Access-Control-Allow-Origin value for API responses
+  KnowledgeBaseId:
+    Type: String
+    Default: ''
+    Description: >
+      Bedrock Knowledge Base ID (e.g. HWLRSGO6X8).
+      When set, ChatFunction uses RetrieveAndGenerate instead of ConverseCommand.
+      Leave empty to keep the plain Converse fallback path.
+  S3BucketName:
+    Type: String
+    Default: kendra-webcrawler-test
+    Description: Existing S3 bucket where downloaded content is deposited
 
 Globals:
   Function:
@@ -23,7 +34,7 @@ Globals:
     MemorySize: 512
     Runtime: nodejs20.x
     Architectures:
-      - arm64
+      - x86_64
     Environment:
       Variables:
         BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -31,6 +42,8 @@ Globals:
         CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
 
 Resources:
+  # ─── API ────────────────────────────────────────────────────────────────────
+
   WildcatApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -48,6 +61,8 @@ Resources:
           - OPTIONS
         MaxAge: 600
 
+  # ─── Chat Lambda ─────────────────────────────────────────────────────────────
+
   ChatFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -55,14 +70,23 @@ Resources:
       CodeUri: src/
       Handler: handler.handler
       Description: Chat + health endpoints backed by Amazon Bedrock (Node.js)
+      Environment:
+        Variables:
+          KNOWLEDGE_BASE_ID: !Ref KnowledgeBaseId
       Policies:
         - Statement:
+            # Bedrock model invocation (ConverseCommand fallback)
             - Effect: Allow
               Action:
                 - bedrock:InvokeModel
                 - bedrock:InvokeModelWithResponseStream
-              # Includes foundation models and inference profiles (e.g. us.anthropic.*)
               Resource: '*'
+            # Bedrock KB retrieval (RetrieveAndGenerate path)
+            - Effect: Allow
+              Action:
+                - bedrock-agent-runtime:RetrieveAndGenerate
+                - bedrock-agent-runtime:Retrieve
+              Resource: !Sub 'arn:aws:bedrock:us-west-2:*:knowledge-base/HWLRSGO6X8'
       Events:
         Health:
           Type: HttpApi
@@ -83,6 +107,63 @@ Resources:
             Path: /api/v1/{proxy+}
             Method: OPTIONS
 
+  # ─── SQS Crawl Queue ────────────────────────────────────────────────────────
+
+  CrawlDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: wildcat-crawl-dlq
+      MessageRetentionPeriod: 1209600  # 14 days
+
+  CrawlQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: wildcat-crawl-queue
+      # Must be >= DownloaderFunction timeout (300s)
+      VisibilityTimeout: 300
+      MessageRetentionPeriod: 86400   # 1 day
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CrawlDLQ.Arn
+        maxReceiveCount: 3
+
+  # ─── Downloader Lambda ───────────────────────────────────────────────────────
+
+  DownloaderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: wildcat-ai-concierge-downloader
+      CodeUri: src/
+      Handler: downloader.handler
+      Description: >
+        Reads URLs from CrawlQueue, fetches content (HTML/PDF), writes raw
+        objects + Bedrock sidecar metadata into the KB S3 bucket.
+      Timeout: 300
+      MemorySize: 512
+      Environment:
+        Variables:
+          S3_BUCKET: !Ref S3BucketName
+          BEDROCK_REGION: !Ref BedrockRegion
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub 'arn:aws:s3:::${S3BucketName}/*'
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource: !GetAtt CrawlQueue.Arn
+      Events:
+        CrawlQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt CrawlQueue.Arn
+            BatchSize: 1
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
 Outputs:
   ApiEndpoint:
     Description: HTTP API base URL for frontend BACKEND_URL (includes /Prod)
@@ -93,3 +174,12 @@ Outputs:
   HealthUrl:
     Description: Health endpoint
     Value: !Sub '${WildcatApi.ApiEndpoint}/Prod/api/v1/health'
+  CrawlQueueUrl:
+    Description: SQS URL for the crawl frontier queue
+    Value: !Ref CrawlQueue
+  CrawlQueueArn:
+    Description: SQS ARN for the crawl frontier queue
+    Value: !GetAtt CrawlQueue.Arn
+  CrawlDLQUrl:
+    Description: SQS URL for the dead-letter queue
+    Value: !Ref CrawlDLQ

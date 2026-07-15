@@ -3,6 +3,11 @@
  *
  * GET  /api/v1/health
  * POST /api/v1/chat
+ *
+ * When KNOWLEDGE_BASE_ID is set, uses RetrieveAndGenerate against the
+ * Bedrock KB (HWLRSGO6X8). Falls back to plain ConverseCommand when:
+ *   - KNOWLEDGE_BASE_ID is not set, or
+ *   - RetrieveAndGenerate throws ResourceNotFoundException
  */
 
 import { randomUUID } from 'node:crypto'
@@ -10,6 +15,10 @@ import {
   BedrockRuntimeClient,
   ConverseCommand,
 } from '@aws-sdk/client-bedrock-runtime'
+import {
+  BedrockAgentRuntimeClient,
+  RetrieveAndGenerateCommand,
+} from '@aws-sdk/client-bedrock-agent-runtime'
 import { SYSTEM_PROMPT } from './prompt.mjs'
 
 // #Used_model_id — US inference profile (base anthropic.claude-sonnet-5 needs a profile)
@@ -17,6 +26,7 @@ const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-sonnet-5'
 const BEDROCK_REGION =
   process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-west-2'
 const MAX_TOKENS = Number.parseInt(process.env.BEDROCK_MAX_TOKENS || '1024', 10)
+const KB_ID = process.env.KNOWLEDGE_BASE_ID || ''
 
 if (process.env.BEDROCK_API_KEY && !process.env.AWS_BEARER_TOKEN_BEDROCK) {
   process.env.AWS_BEARER_TOKEN_BEDROCK = process.env.BEDROCK_API_KEY
@@ -29,13 +39,22 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 }
 
+// Lazy-initialized SDK clients
 let bedrockClient
+let agentRuntimeClient
 
 function getBedrock() {
   if (!bedrockClient) {
     bedrockClient = new BedrockRuntimeClient({ region: BEDROCK_REGION })
   }
   return bedrockClient
+}
+
+function getAgentRuntime() {
+  if (!agentRuntimeClient) {
+    agentRuntimeClient = new BedrockAgentRuntimeClient({ region: BEDROCK_REGION })
+  }
+  return agentRuntimeClient
 }
 
 function response(statusCode, body) {
@@ -113,6 +132,84 @@ function extractText(converseResponse) {
   )
 }
 
+/**
+ * Extract source URLs from a RetrieveAndGenerate response.
+ * Checks both s3Location.uri and metadata.source_url (written by DownloaderFunction).
+ */
+function extractSources(ragResponse) {
+  const sources = []
+  const seen = new Set()
+
+  const citations = ragResponse?.citations || []
+  for (const citation of citations) {
+    const refs = citation?.retrievedReferences || []
+    for (const ref of refs) {
+      // Prefer explicit source_url metadata (set by our downloader sidecar)
+      const metaUrl = ref?.metadata?.source_url
+      const s3Uri = ref?.location?.s3Location?.uri
+
+      const url = metaUrl || s3Uri
+      if (url && !seen.has(url)) {
+        seen.add(url)
+        sources.push({
+          url,
+          title: ref?.metadata?.title || '',
+          content_type: ref?.metadata?.content_type || '',
+        })
+      }
+    }
+  }
+
+  return sources
+}
+
+/**
+ * Attempt RetrieveAndGenerate against the configured Bedrock KB.
+ * Returns { answer, sources } on success.
+ * Throws the original error so the caller can decide whether to fall back.
+ */
+async function callRetrieveAndGenerate(userQuery, sessionId) {
+  console.log('RetrieveAndGenerate', { kbId: KB_ID, sessionId })
+
+  const input = {
+    input: { text: userQuery },
+    retrieveAndGenerateConfiguration: {
+      type: 'KNOWLEDGE_BASE',
+      knowledgeBaseConfiguration: {
+        knowledgeBaseId: KB_ID,
+        modelArn: `arn:aws:bedrock:${BEDROCK_REGION}::foundation-model/${MODEL_ID}`,
+        retrievalConfiguration: {
+          vectorSearchConfiguration: {
+            numberOfResults: 5,
+          },
+        },
+        generationConfiguration: {
+          promptTemplate: {
+            textPromptTemplate: `${SYSTEM_PROMPT}\n\nUse the following retrieved context to answer the question.\nIf the context does not contain the answer, say so and suggest where the user might find it.\n\n$search_results$\n\nQuestion: $query$`,
+          },
+          inferenceConfig: {
+            textInferenceConfig: {
+              maxTokens: MAX_TOKENS,
+            },
+          },
+        },
+      },
+    },
+    // sessionId enables multi-turn within the same KB session
+    sessionId,
+  }
+
+  const result = await getAgentRuntime().send(
+    new RetrieveAndGenerateCommand(input),
+  )
+
+  return {
+    answer: result?.output?.text?.trim() || "I wasn't able to generate a response. Please try again.",
+    sources: extractSources(result),
+    session_id: result?.sessionId || sessionId,
+  }
+}
+
 async function handleChat(body) {
   const messages = body?.messages
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -127,13 +224,55 @@ async function handleChat(body) {
     return response(400, { detail: 'No valid user/assistant messages found.' })
   }
 
+  // Extract the latest user message text for RetrieveAndGenerate
+  const lastUserMsg = [...bedrockMessages].reverse().find((m) => m.role === 'user')
+  const userQuery = lastUserMsg?.content?.map((c) => c.text).join(' ') || ''
+
+  // --- KB path: use RetrieveAndGenerate when KNOWLEDGE_BASE_ID is configured ---
+  if (KB_ID) {
+    try {
+      const { answer, sources, session_id } = await callRetrieveAndGenerate(
+        userQuery,
+        sessionId,
+      )
+      return response(200, {
+        answer,
+        sources,
+        session_id,
+        model_used: MODEL_ID,
+        is_mock: false,
+        retrieval_mode: 'knowledge_base',
+      })
+    } catch (err) {
+      const isNotFound =
+        err?.name === 'ResourceNotFoundException' ||
+        err?.$metadata?.httpStatusCode === 404
+      if (isNotFound) {
+        console.warn(
+          'KB not found, falling back to ConverseCommand',
+          err.message,
+        )
+        // fall through to ConverseCommand below
+      } else {
+        // Surface real errors (throttling, auth, etc.)
+        const code = err?.name || err?.Code || 'Error'
+        const message = err?.message || String(err)
+        console.error('RetrieveAndGenerate failed', code, err)
+        return response(502, {
+          detail: `Bedrock KB request failed (${code}): ${message}`,
+        })
+      }
+    }
+  }
+
+  // --- Fallback path: plain ConverseCommand (no KB configured, or KB not found) ---
   try {
+    console.log('ConverseCommand fallback', { modelId: MODEL_ID, sessionId })
     const result = await getBedrock().send(
       new ConverseCommand({
         modelId: MODEL_ID,
         system: [{ text: SYSTEM_PROMPT }],
         messages: bedrockMessages,
-        // Claude Sonnet 5 rejects temperature (deprecated for this model).
         inferenceConfig: {
           maxTokens: MAX_TOKENS,
         },
@@ -146,6 +285,7 @@ async function handleChat(body) {
       session_id: sessionId,
       model_used: MODEL_ID,
       is_mock: false,
+      retrieval_mode: 'direct',
     })
   } catch (err) {
     const code = err?.name || err?.Code || 'Error'
@@ -171,6 +311,7 @@ export async function handler(event) {
       status: 'ok',
       model: MODEL_ID,
       region: BEDROCK_REGION,
+      knowledge_base_id: KB_ID || null,
       runtime: 'nodejs',
     })
   }
