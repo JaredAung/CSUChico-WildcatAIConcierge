@@ -14,8 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 12%;
 
-    /* Primary: CSU Chico Scarlet #CE1126 */
-    --primary: 352 86% 44%;
+    /* Primary: CSU Chico Scarlet #a32f3b */
+    --primary: 352 57% 42%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary: warm neutral */
@@ -34,14 +34,14 @@
 
     --border: 220 13% 88%;
     --input: 220 13% 88%;
-    --ring: 352 86% 44%;
+    --ring: 352 57% 42%;
 
     --radius: 0.625rem;
 
     /* Chat-specific tokens */
     --chat-bg: 220 20% 97%;
-    --bubble-user-from: 352 86% 44%;
-    --bubble-user-to: 352 75% 36%;
+    --bubble-user-from: 352 57% 42%;
+    --bubble-user-to: 352 57% 32%;
     --bubble-ai-bg: 0 0% 100%;
     --sidebar-bg: 0 0% 100%;
     --header-bg: 0 0% 100%;
@@ -58,7 +58,7 @@
     --popover-foreground: 214 32% 92%;
 
     /* Primary stays scarlet, brightened for dark bg */
-    --primary: 352 86% 56%;
+    --primary: 352 57% 54%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 224 24% 18%;
@@ -75,11 +75,11 @@
 
     --border: 224 20% 20%;
     --input: 224 20% 20%;
-    --ring: 352 86% 56%;
+    --ring: 352 57% 54%;
 
     --chat-bg: 224 30% 8%;
-    --bubble-user-from: 352 86% 56%;
-    --bubble-user-to: 352 75% 42%;
+    --bubble-user-from: 352 57% 54%;
+    --bubble-user-to: 352 57% 42%;
     --bubble-ai-bg: 224 28% 13%;
     --sidebar-bg: 224 28% 10%;
     --header-bg: 224 28% 10%;
