@@ -45,7 +45,7 @@ function buildWelcomeMessage(): DisplayMessage {
   return {
     id: 'welcome',
     role: 'assistant',
-    content: 'Hi! I am the **Wildcat AI Concierge** 🐾\n\nHow can I help you today? You can ask me about parking, dining, campus events, facility rentals, disability accommodations, housing, and more.',
+    content: 'Hi! I am the **Wildcat Navigator** 🐾\n\nHow can I help you today? You can ask me about parking, dining, campus events, facility rentals, disability accommodations, housing, and more.',
     timestamp: new Date().toISOString(),
     meta: { sources: [], departments: [] },
   }
@@ -246,7 +246,7 @@ function ChatContent() {
             <Link
               href="/"
               className="flex items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Wildcat AI Concierge — Home"
+              aria-label="Wildcat Navigator — Home"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary shadow-sm ring-2 ring-primary/20 overflow-hidden">
                 <Image
@@ -259,10 +259,10 @@ function ChatContent() {
                 />
               </div>
               <div className="hidden sm:flex flex-col leading-none">
-                <span className="font-bold text-sm text-foreground tracking-tight">Wildcat AI Concierge</span>
+                <span className="font-bold text-sm text-foreground tracking-tight">Wildcat Navigator</span>
                 <span className="text-[10px] text-muted-foreground font-medium">CSU Chico</span>
               </div>
-              <span className="sm:hidden font-bold text-sm text-foreground">Wildcat AI</span>
+              <span className="sm:hidden font-bold text-sm text-foreground">Wildcat Navigator</span>
             </Link>
 
             {/* Online indicator */}
@@ -335,7 +335,7 @@ function ChatContent() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] font-semibold tracking-wide uppercase text-primary/80 px-1">
-                    Wildcat AI
+                    Wildcat Navigator
                   </span>
                   <div className="bubble-ai rounded-2xl rounded-tl-sm">
                     <TypingIndicator />

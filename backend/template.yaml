@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Wildcat AI Concierge — API Gateway + Node.js Lambda + Bedrock Agent
+Description: Wildcat Navigator — API Gateway + Node.js Lambda + Bedrock Agent
 
 Parameters:
   BedrockRegion:

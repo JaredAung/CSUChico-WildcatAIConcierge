@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   MessageSquare,
   BookOpen,
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Header } from '@/components/layout/Header'
 
 export const metadata: Metadata = {
-  title: 'Wildcat AI Concierge — CSU Chico',
+  title: 'Wildcat Navigator — CSU Chico',
   description:
     'Your AI-powered campus guide for California State University, Chico. Ask questions about campus services, parking, dining, accessibility, events, and more.',
 }
@@ -207,9 +208,15 @@ export default function LandingPage() {
             {/* Brand */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-2xl" aria-hidden="true">🐾</span>
+                <Image
+                  src="/Chico logo.png"
+                  alt="CSU Chico"
+                  width={36}
+                  height={36}
+                  className="h-9 w-auto object-contain"
+                />
                 <div>
-                  <div className="font-bold text-sm">Wildcat AI Concierge</div>
+                  <div className="font-bold text-sm">Wildcat Navigator</div>
                   <div className="text-xs text-white/60">California State University, Chico</div>
                 </div>
               </div>
@@ -262,7 +269,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
-            <span>© 2026 Chico State · Wildcat AI Concierge Prototype</span>
+            <span>© 2026 Chico State · Wildcat Navigator Prototype</span>
             <span>Powered by <span className="text-white/60">Amazon Bedrock</span> · CSU Chico AI Summer Camp</span>
             <nav aria-label="Footer legal links" className="flex gap-4">
               <a href="/about#accessibility" className="hover:text-white/70 transition-colors">Accessibility</a>

@@ -1,4 +1,4 @@
-# Wildcat AI Concierge
+# Wildcat Navigator
 
 Conversational access to campus services, policies, and facility resources.
 

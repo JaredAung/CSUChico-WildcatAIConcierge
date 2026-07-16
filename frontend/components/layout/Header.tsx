@@ -58,7 +58,7 @@ export function Header({ className, showNav = false }: HeaderProps) {
           <Link
             href="/"
             className="flex items-center gap-3 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary shrink-0"
-            aria-label="Wildcat AI Concierge — Home"
+            aria-label="Wildcat Navigator — Home"
           >
             <Image
               src="/Chico logo.png"
@@ -84,8 +84,7 @@ export function Header({ className, showNav = false }: HeaderProps) {
               <nav aria-label="Main navigation" className="hidden sm:flex items-center gap-0.5 mr-2">
                 {[
                   { label: 'Home', href: '/' },
-                  { label: 'Chat', href: '/chat' },
-                  { label: 'About', href: '/about' },
+                //  { label: 'About', href: '/about' },
                 ].map(({ label, href }) => (
                   <Button key={label} variant="ghost" size="sm" asChild
                     className="text-white hover:bg-white/10 hover:text-white text-sm font-medium px-3">

@@ -21,7 +21,7 @@ import { Header } from '@/components/layout/Header'
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Learn how the Wildcat AI Concierge works, its technology stack, privacy practices, ' +
+    'Learn how the Wildcat Navigator works, its technology stack, privacy practices, ' +
     'and accessibility commitment.',
 }
 
@@ -70,7 +70,7 @@ export default function AboutPage() {
               id="about-heading"
               className="text-3xl sm:text-4xl font-bold tracking-tight"
             >
-              About Wildcat AI Concierge
+              About Wildcat Navigator
             </h1>
             <p className="text-lg text-primary-foreground/85 max-w-2xl mx-auto leading-relaxed">
               A campus AI assistant prototype built at the CSU Chico AI Summer Camp, designed to help
@@ -88,13 +88,13 @@ export default function AboutPage() {
                 <Brain className="w-5 h-5 text-primary" aria-hidden="true" />
               </div>
               <h2 id="what-heading" className="text-2xl font-bold">
-                What is the Wildcat AI Concierge?
+                What is the Wildcat Navigator?
               </h2>
             </div>
             <Card>
               <CardContent className="pt-5 space-y-3 text-sm leading-relaxed text-muted-foreground">
                 <p>
-                  The Wildcat AI Concierge is a conversational AI chatbot designed specifically for{' '}
+                  The Wildcat Navigator is a conversational AI chatbot designed specifically for{' '}
                   <strong className="text-foreground">California State University, Chico</strong> students,
                   faculty, and staff. You can ask it natural language questions about campus life and
                   instantly receive accurate, sourced answers.
@@ -223,7 +223,7 @@ export default function AboutPage() {
             <Card>
               <CardContent className="pt-5 space-y-3 text-sm text-muted-foreground leading-relaxed">
                 <p>
-                  The Wildcat AI Concierge is a <strong className="text-foreground">prototype</strong>. Please
+                  The Wildcat Navigator is a <strong className="text-foreground">prototype</strong>. Please
                   do not share sensitive personal information (student ID numbers, passwords, financial data,
                   Social Security Numbers) in the chat.
                 </p>
@@ -264,7 +264,7 @@ export default function AboutPage() {
             <Card>
               <CardContent className="pt-5 space-y-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We are committed to ensuring the Wildcat AI Concierge is accessible to everyone,
+                  We are committed to ensuring the Wildcat Navigator is accessible to everyone,
                   including users with disabilities. The interface is designed to meet{' '}
                   <strong className="text-foreground">WCAG 2.1 Level AA</strong> standards.
                 </p>
