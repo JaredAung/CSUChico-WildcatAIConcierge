@@ -1,0 +1,18 @@
+{
+  "metadataAttributes": {
+    "type": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "restaurant"
+      },
+      "includeForEmbedding": true
+    },
+    "time": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "Weekdays: 11am-3pm 5pm-9pm; Saturday: 5pm- 9:30pm; Sunday: closed"
+      },
+      "includeForEmbedding": false
+    }
+  }
+}

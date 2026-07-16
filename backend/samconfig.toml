@@ -13,7 +13,7 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 region = "us-west-2"
-parameter_overrides = "BedrockRegion=\"us-west-2\" BedrockAgentId=\"QIPSDXWZWX\" BedrockAgentAliasId=\"DJA0QMNES1\" CorsAllowOrigin=\"*\""
+parameter_overrides = "BedrockRegion=\"us-west-2\" BedrockAgentId=\"QIPSDXWZWX\" BedrockAgentAliasId=\"BABZHDJ2XW\" CorsAllowOrigin=\"*\""
 s3_prefix = "wildcat-ai-concierge"
 image_repositories = []
 
