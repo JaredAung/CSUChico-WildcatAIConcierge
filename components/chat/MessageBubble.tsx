@@ -174,6 +174,17 @@ export function MessageBubble({
                       {children}
                     </a>
                   ),
+                  img: ({ src, alt, ...props }) => (
+                    <img
+                      src={src}
+                      alt={alt || 'Campus map'}
+                      className="rounded-lg border border-border shadow-sm max-w-full h-auto my-3 cursor-pointer"
+                      loading="lazy"
+                      onClick={() => src && window.open(src, '_blank')}
+                      title="Click to view full size"
+                      {...props}
+                    />
+                  ),
                 }}
               >
                 {message.content}

@@ -404,18 +404,29 @@ class RAGEngine:
         try:
             doc = Document(str(path))
             # Extract all paragraph text, skip empty lines
-            text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-            # Also pull text from tables
+            paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+            # Also pull text from tables — keep each row as a complete unit
+            table_rows = []
             for table in doc.tables:
                 for row in table.rows:
                     row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
                     if row_text:
-                        text += "\n" + row_text
+                        table_rows.append(row_text)
         except Exception as exc:
             logger.warning("Could not parse Word document %s: %s", path, exc)
             return []
 
-        chunks = self._chunk_text(text, chunk_size=500, overlap=50)
+        # For documents that are primarily tables (like building links),
+        # chunk by grouping complete rows together instead of splitting mid-row
+        if table_rows and len(table_rows) > len(paragraphs):
+            # Table-heavy document: chunk by rows, never splitting a row
+            chunks = self._chunk_by_lines(table_rows, max_chunk_size=1200)
+        else:
+            # Paragraph-heavy document: use standard text chunking
+            text = "\n".join(paragraphs)
+            if table_rows:
+                text += "\n" + "\n".join(table_rows)
+            chunks = self._chunk_text(text, chunk_size=500, overlap=50)
         return [
             {
                 "id": f"{path.stem}-docx-{i}",
@@ -442,6 +453,27 @@ class RAGEngine:
             end = start + chunk_size
             chunks.append(text[start:end])
             start += chunk_size - overlap
+        return chunks
+
+    @staticmethod
+    def _chunk_by_lines(lines: List[str], max_chunk_size: int = 1200) -> List[str]:
+        """Group complete lines into chunks without splitting any line.
+        This prevents URLs and table rows from being cut mid-way."""
+        if not lines:
+            return []
+        chunks = []
+        current_chunk = []
+        current_size = 0
+        for line in lines:
+            line_size = len(line) + 1  # +1 for newline
+            if current_size + line_size > max_chunk_size and current_chunk:
+                chunks.append("\n".join(current_chunk))
+                current_chunk = []
+                current_size = 0
+            current_chunk.append(line)
+            current_size += line_size
+        if current_chunk:
+            chunks.append("\n".join(current_chunk))
         return chunks
 
     def _index_documents(self, docs: List[dict]) -> None:
@@ -592,8 +624,11 @@ class RAGEngine:
         """
         Construct a contextual answer from retrieved chunks without an LLM.
         Responds in Spanish when language='es'.
-        Cleans up partial sentences and formats for readability.
+        Cleans up partial sentences, formats URLs as markdown links, and
+        presents information in a readable format.
         """
+        import re
+
         if not documents:
             if language == "es":
                 return (
@@ -606,6 +641,100 @@ class RAGEngine:
                 "knowledge base right now. Please contact the relevant CSU Chico "
                 "department directly for assistance."
             )
+
+        # Special handler for map-focused queries — return a clean, focused response
+        q_lower = question.lower()
+        map_query_keywords = ['campus map', 'show me a map', 'map of campus', 'mapa del campus', 'mapa']
+        if any(kw in q_lower for kw in map_query_keywords):
+            building_links = self._get_building_links_section(language)
+            if language == "es":
+                return (
+                    "🗺️ **Mapa del Campus CSU Chico**\n\n"
+                    "![Mapa del Campus](/campus-map.png)\n\n"
+                    "---\n\n"
+                    "📄 **Mapa para imprimir (PDF):** [Descargar mapa del campus](https://www.csuchico.edu/_assets/documents/office/admissions/printable-campus-map.pdf)\n\n"
+                    "♿ **Mapas de rutas accesibles:** [csuchico.edu/facilities/accessibility-maps](https://csuchico.edu/facilities/accessibility-maps)\n\n"
+                    "🌐 **Mapa interactivo en línea:** [csuchico.edu/maps/campus](https://www.csuchico.edu/maps/campus/)"
+                    + building_links
+                )
+            return (
+                "🗺️ **CSU Chico Campus Map**\n\n"
+                "![CSU Chico Campus Map](/campus-map.png)\n\n"
+                "---\n\n"
+                "📄 **Printable Map (PDF):** [Download printable campus map](https://www.csuchico.edu/_assets/documents/office/admissions/printable-campus-map.pdf)\n\n"
+                "♿ **Accessibility Route Maps:** [csuchico.edu/facilities/accessibility-maps](https://csuchico.edu/facilities/accessibility-maps)\n\n"
+                "🌐 **Interactive Online Map:** [csuchico.edu/maps/campus](https://www.csuchico.edu/maps/campus/)"
+                + building_links
+            )
+
+        def _format_urls(text: str) -> str:
+            """Convert raw URLs into readable markdown links."""
+            # Pattern: "Label | apple_maps_url | google_maps_url" (from Buildings Links doc)
+            def _format_building_line(line: str) -> str:
+                # Split carefully — URLs don't contain bare pipes, so split on ' | '
+                parts = [p.strip() for p in line.split(' | ')]
+                if len(parts) < 2:
+                    # Try splitting on single pipe with spaces
+                    parts = [p.strip() for p in line.split('|')]
+                
+                # Separate URLs from names
+                urls_in_parts = [p for p in parts if p.startswith('http')]
+                names_in_parts = [p for p in parts if p and not p.startswith('http')]
+                
+                if len(urls_in_parts) >= 1 and len(names_in_parts) >= 1:
+                    name = names_in_parts[0]
+                    # Skip header rows
+                    if name.lower() in ('building', 'name', 'location'):
+                        return None
+                    links = []
+                    for url in urls_in_parts:
+                        url = url.rstrip(',').strip()
+                        if 'maps.apple.com' in url:
+                            links.append(f"[Apple Maps]({url})")
+                        elif 'google.com/maps' in url:
+                            links.append(f"[Google Maps]({url})")
+                        else:
+                            links.append(f"[Link]({url})")
+                    return f"- **{name}** — {' | '.join(links)}"
+                return None
+
+            lines = text.split('\n')
+            formatted_lines = []
+            for line in lines:
+                if '|' in line and 'http' in line:
+                    formatted = _format_building_line(line)
+                    if formatted:
+                        formatted_lines.append(formatted)
+                        continue
+
+                # Convert standalone raw URLs to markdown links
+                # Match URLs not already in markdown link syntax
+                def _url_to_link(match):
+                    url = match.group(0).rstrip(',')
+                    # Try to create a readable label from the URL
+                    if 'csuchico.edu' in url:
+                        # Extract path for label
+                        path = url.split('csuchico.edu')[-1].strip('/')
+                        label = path.split('/')[-1].replace('-', ' ').replace('_', ' ').title() if path else 'CSU Chico'
+                        if label.endswith('.pdf'):
+                            label = label[:-4] + ' (PDF)'
+                        return f"[{label}]({url})"
+                    elif 'maps.apple.com' in url:
+                        return f"[Apple Maps]({url})"
+                    elif 'google.com/maps' in url:
+                        return f"[Google Maps]({url})"
+                    else:
+                        return f"[Link]({url})"
+
+                # Only replace URLs that aren't already part of a markdown link
+                line = re.sub(
+                    r'(?<!\()(https?://[^\s,\)]+)',
+                    _url_to_link,
+                    line
+                )
+                formatted_lines.append(line)
+
+            return '\n'.join(formatted_lines)
 
         def _clean_snippet(text: str) -> str:
             """Trim to complete sentences and clean up fragments."""
@@ -623,62 +752,131 @@ class RAGEngine:
                 text = text[cut:].strip()
 
             # Trim to last complete sentence (ends with . ? ! or a markdown line)
-            if len(text) > 400:
-                text = text[:500]
-                # Find last sentence end
-                for end_char in ['. ', '.\n', '?\n', '!\n', '? ', '! ']:
+            if len(text) > 1500:
+                text = text[:1800]
+                # Find last sentence end or list item end
+                for end_char in ['\n- ', '\n* ', '. ', '.\n', '?\n', '!\n', '? ', '! ']:
                     last = text.rfind(end_char)
-                    if last > 200:
+                    if last > 800:
                         text = text[:last + 1]
                         break
                 else:
                     # Fall back to last newline
                     last_nl = text.rfind('\n')
-                    if last_nl > 200:
+                    if last_nl > 800:
                         text = text[:last_nl]
 
+            # Format URLs in the cleaned text
+            text = _format_urls(text)
             return text.strip()
 
-        # Use top-3 most relevant chunks
-        top_docs = documents[:3]
-        top_meta = metadatas[:3]
-
-        # Clean and deduplicate chunks
-        seen_titles = set()
-        body_parts = []
-        for doc, meta in zip(top_docs, top_meta):
+        # Group all retrieved chunks by source title so we can combine
+        # fragments from the same document (e.g., a long building list)
+        from collections import OrderedDict
+        grouped: OrderedDict[str, List[str]] = OrderedDict()
+        for doc, meta in zip(documents, metadatas):
             title = meta.get("title", "Campus Resource")
-            # Skip duplicate sources
-            if title in seen_titles:
-                continue
-            seen_titles.add(title)
+            if title not in grouped:
+                grouped[title] = []
+            grouped[title].append(doc)
 
-            snippet = _clean_snippet(doc)
+        # Build body parts, combining chunks from the same source
+        body_parts = []
+        for title, chunks in grouped.items():
+            # Combine all chunks from same source, removing overlap duplicates
+            combined = chunks[0]
+            for chunk in chunks[1:]:
+                # Try to find overlap and merge
+                overlap_len = min(60, len(combined), len(chunk))
+                overlap_found = False
+                for ol in range(overlap_len, 10, -1):
+                    if combined.endswith(chunk[:ol]):
+                        combined += chunk[ol:]
+                        overlap_found = True
+                        break
+                if not overlap_found:
+                    combined += "\n" + chunk
+
+            snippet = _clean_snippet(combined)
             if not snippet:
                 continue
             body_parts.append(f"**{title}**\n\n{snippet}")
 
+            # Limit to 3 distinct sources to keep response manageable
+            if len(body_parts) >= 3:
+                break
+
         if not body_parts:
             # Fallback if cleaning removed everything
-            snippet = documents[0][:300]
+            snippet = _format_urls(documents[0][:300])
             title = metadatas[0].get("title", "Campus Resource")
             body_parts.append(f"**{title}**\n\n{snippet}")
 
         if language == "es":
-            intro = f"Esto es lo que encontré sobre tu pregunta:\n\n"
+            intro = "Esto es lo que encontré:\n\n"
         else:
-            intro = f"Here's what I found:\n\n"
+            intro = "Here's what I found:\n\n"
 
         # Add source links if available
         sources_note = ""
-        urls = [m.get("url", "") for m in top_meta if m.get("url")]
+        urls = [m.get("url", "") for m in metadatas if m.get("url")]
         if urls:
             if language == "es":
                 sources_note = "\n\n---\n📎 Para más información: " + " | ".join(urls[:2])
             else:
                 sources_note = "\n\n---\n📎 For more details: " + " | ".join(urls[:2])
 
-        return intro + "\n\n---\n\n".join(body_parts) + sources_note
+        # Include campus map image if the question is about maps/directions
+        map_keywords = ['map', 'mapa', 'where is', 'dónde', 'directions', 'find', 'locate', 'building']
+        map_image = ""
+        if any(kw in question.lower() for kw in map_keywords):
+            if language == "es":
+                map_image = "\n\n---\n\n🗺️ **Mapa del Campus:**\n\n![Mapa del Campus CSU Chico](/campus-map.png)"
+            else:
+                map_image = "\n\n---\n\n🗺️ **Campus Map:**\n\n![CSU Chico Campus Map](/campus-map.png)"
+
+        # Always include building map links when user asks about buildings
+        building_keywords = ['building', 'buildings', 'edificio', 'edificios', 'map link',
+                            'where is', 'dónde', 'locate', 'find', 'directions',
+                            'library', 'dining', 'union', 'recreation', 'admin',
+                            'engineering', 'performing arts', 'kitchen']
+        building_links_section = ""
+        if any(kw in question.lower() for kw in building_keywords):
+            # Check if building links are already in the response
+            if 'Apple Maps' not in "\n".join(body_parts):
+                building_links_section = self._get_building_links_section(language)
+
+        return intro + "\n\n---\n\n".join(body_parts) + building_links_section + sources_note + map_image
+
+    def _get_building_links_section(self, language: str = "en") -> str:
+        """Return formatted building map links section."""
+        from pathlib import Path
+        try:
+            from docx import Document
+            kb_path = Path(self.settings.knowledge_base_dir)
+            # Look for the buildings links file
+            for docx_file in kb_path.glob("*[Bb]uilding*[Ll]ink*.docx"):
+                doc = Document(str(docx_file))
+                lines = []
+                for table in doc.tables:
+                    for row in table.rows:
+                        cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                        if len(cells) >= 3 and cells[0].lower() != 'building':
+                            name = cells[0]
+                            apple_url = cells[1]
+                            google_url = cells[2]
+                            lines.append(
+                                f"- **{name}** — [Apple Maps]({apple_url}) | [Google Maps]({google_url})"
+                            )
+                if lines:
+                    if language == "es":
+                        header = "\n\n---\n\n📍 **Enlaces de Mapas de Edificios:**\n\n"
+                    else:
+                        header = "\n\n---\n\n📍 **Building Map Links:**\n\n"
+                    return header + "\n".join(lines)
+        except Exception:
+            pass
+        return ""
 
     def _bedrock_answer(
         self,
