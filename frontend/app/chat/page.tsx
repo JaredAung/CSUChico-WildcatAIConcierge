@@ -32,7 +32,6 @@ interface AssistantMeta {
   sources: Source[]
   departments: Department[]
   workflow?: WorkflowCardType
-  confidence?: number
 }
 
 interface DisplayMessage extends ChatMessage {
@@ -139,10 +138,6 @@ function ChatContent() {
             sources: response.sources ?? [],
             departments: response.relevant_departments ?? [],
             workflow: response.workflow_card,
-            // Derive confidence from highest source relevance score if present
-            confidence: response.sources?.length
-              ? Math.max(...response.sources.map((s) => s.relevance_score ?? 0))
-              : undefined,
           },
         }
 
@@ -290,7 +285,6 @@ function ChatContent() {
                       <SourcePanel
                         sources={msg.meta.sources}
                         departments={msg.meta.departments}
-                        confidence={msg.meta.confidence}
                       />
                     )}
                     {msg.meta.workflow && (

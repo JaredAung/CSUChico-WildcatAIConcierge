@@ -10,7 +10,6 @@ import {
   Globe,
   BookOpen,
   Building2,
-  BarChart2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,8 +21,6 @@ import type { Source, Department } from '@/lib/types'
 interface SourcePanelProps {
   sources: Source[]
   departments?: Department[]
-  /** Overall confidence score 0–1 from the RAG retrieval */
-  confidence?: number
   className?: string
 }
 
@@ -54,50 +51,16 @@ const sourceTypeBadge: Record<string, 'default' | 'secondary' | 'info' | 'gold' 
   Document: 'secondary',
 }
 
-function ConfidenceBar({ score }: { score: number }) {
-  const pct = Math.round(score * 100)
-  const color =
-    score >= 0.75
-      ? 'bg-green-500'
-      : score >= 0.5
-      ? 'bg-amber-400'
-      : 'bg-red-500'
-  const label =
-    score >= 0.75 ? 'High confidence' : score >= 0.5 ? 'Moderate confidence' : 'Low confidence'
-
-  return (
-    <div className="flex items-center gap-2" aria-label={`Confidence: ${pct}% — ${label}`}>
-      <span className="text-xs text-muted-foreground shrink-0">Confidence</span>
-      <div
-        className="flex-1 h-2 rounded-full bg-muted overflow-hidden"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={label}
-      >
-        <div
-          className={cn('h-full rounded-full transition-all duration-500', color)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-xs text-muted-foreground shrink-0 tabular-nums w-8 text-right">
-        {pct}%
-      </span>
-    </div>
-  )
-}
-
 // ─── SourcePanel ──────────────────────────────────────────────────────────────
 
-export function SourcePanel({ sources, departments = [], confidence, className }: SourcePanelProps) {
+export function SourcePanel({ sources, departments = [], className }: SourcePanelProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const hasSources = sources.length > 0
   const hasDepts = departments.length > 0
   const hasContent = hasSources || hasDepts
 
-  if (!hasContent && confidence === undefined) return null
+  if (!hasContent) return null
 
   const toggleId = `source-panel-toggle-${Math.random().toString(36).slice(2, 8)}`
   const regionId = `source-panel-region-${Math.random().toString(36).slice(2, 8)}`
@@ -144,11 +107,6 @@ export function SourcePanel({ sources, departments = [], confidence, className }
         )}
       >
         <div className="px-4 pb-4 pt-1 space-y-4">
-          {/* Confidence bar */}
-          {confidence !== undefined && (
-            <ConfidenceBar score={confidence} />
-          )}
-
           {/* ── Source Documents ────────────────────────────────────── */}
           {hasSources && (
             <div>
