@@ -1,20 +1,41 @@
 /**
- * API Gateway → Lambda → Bedrock Agent (Node.js)
+ * API Gateway → Lambda → Bedrock Knowledge Base (Node.js)
  *
  * GET  /api/v1/health
- * POST /api/v1/chat  (InvokeAgent — answer + citations; multi-turn via sessionId)
+ * POST /api/v1/chat  (RetrieveAndGenerate — answer + citations; multi-turn via sessionId)
  */
 
 import { randomUUID } from 'node:crypto'
 import {
   BedrockAgentRuntimeClient,
-  InvokeAgentCommand,
+  RetrieveAndGenerateCommand,
 } from '@aws-sdk/client-bedrock-agent-runtime'
+import { AGENT_INSTRUCTIONS } from './prompt.mjs'
 
 const BEDROCK_REGION =
   process.env.BEDROCK_REGION || process.env.AWS_REGION || 'us-west-2'
-const AGENT_ID = (process.env.BEDROCK_AGENT_ID || '').trim()
-const AGENT_ALIAS_ID = (process.env.BEDROCK_AGENT_ALIAS_ID || '').trim()
+const KNOWLEDGE_BASE_ID = (process.env.BEDROCK_KNOWLEDGE_BASE_ID || '').trim()
+const MODEL_ARN = (process.env.BEDROCK_MODEL_ARN || '').trim()
+
+const RAG_PROMPT_TEMPLATE = `${AGENT_INSTRUCTIONS}
+
+Use the search results below — and only the search results below — to answer the user's question.
+
+User question: $query$
+
+$search_results$
+
+$output_format_instructions$`
+
+// Bedrock requires an orchestration template whenever the generation template is
+// customized. It must contain $conversation_history$ and $output_format_instructions$.
+const ORCHESTRATION_PROMPT_TEMPLATE = `Formulate a search query for the knowledge base based on the conversation history below, focused on retrieving information relevant to the latest message. If the user's message is not in English, translate the core intent into English for the search query.
+
+$query$
+
+$conversation_history$
+
+$output_format_instructions$`
 
 if (process.env.BEDROCK_API_KEY && !process.env.AWS_BEARER_TOKEN_BEDROCK) {
   process.env.AWS_BEARER_TOKEN_BEDROCK = process.env.BEDROCK_API_KEY
@@ -27,15 +48,13 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 }
 
-const textDecoder = new TextDecoder('utf-8')
-
-let agentClient
+let agentRuntimeClient
 
 function getAgentRuntime() {
-  if (!agentClient) {
-    agentClient = new BedrockAgentRuntimeClient({ region: BEDROCK_REGION })
+  if (!agentRuntimeClient) {
+    agentRuntimeClient = new BedrockAgentRuntimeClient({ region: BEDROCK_REGION })
   }
-  return agentClient
+  return agentRuntimeClient
 }
 
 function response(statusCode, body) {
@@ -74,19 +93,28 @@ function methodOf(event) {
   ).toUpperCase()
 }
 
-function lastUserText(messages) {
-  if (!Array.isArray(messages)) return ''
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i]
-    if (msg?.role === 'user') {
-      const text = String(msg.content || '').trim()
-      if (text) return text
-    }
-  }
-  return ''
+function hasUserText(messages) {
+  return (
+    Array.isArray(messages) &&
+    messages.some((msg) => msg?.role === 'user' && String(msg.content || '').trim())
+  )
 }
 
-/** Map Agent / KB citation refs → frontend Source[]. */
+/**
+ * Bedrock's RetrieveAndGenerate sessionId must be one Bedrock itself issued —
+ * it rejects a client-generated ID. We don't track that server-side, so instead
+ * fold the client's full message history into the query text on every call.
+ */
+function buildQueryText(messages) {
+  if (!Array.isArray(messages)) return ''
+  return messages
+    .filter((msg) => msg?.role === 'user' || msg?.role === 'assistant')
+    .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${String(msg.content || '').trim()}`)
+    .filter((line) => line !== 'User:' && line !== 'Assistant:')
+    .join('\n')
+}
+
+/** Map KB citation refs → frontend Source[]. */
 function referencesToSources(citations) {
   const sources = []
   const seen = new Set()
@@ -126,59 +154,50 @@ function referencesToSources(citations) {
   return sources
 }
 
-/** Consume InvokeAgent completion stream: answer bytes + attribution citations. */
-async function consumeAgentCompletion(completion) {
-  let answer = ''
-  const citations = []
-
-  if (!completion) {
-    return { answer, citations }
-  }
-
-  for await (const event of completion) {
-    const chunk = event.chunk
-    if (chunk?.bytes) {
-      answer += textDecoder.decode(chunk.bytes)
-    }
-    const chunkCitations = chunk?.attribution?.citations
-    if (Array.isArray(chunkCitations) && chunkCitations.length) {
-      citations.push(...chunkCitations)
-    }
-  }
-
-  return { answer: answer.trim(), citations }
-}
-
 async function handleChat(body) {
-  if (!AGENT_ID || !AGENT_ALIAS_ID) {
+  if (!KNOWLEDGE_BASE_ID || !MODEL_ARN) {
     return response(500, {
       detail:
-        'BEDROCK_AGENT_ID and BEDROCK_AGENT_ALIAS_ID must be set. Redeploy with agent parameters.',
+        'BEDROCK_KNOWLEDGE_BASE_ID and BEDROCK_MODEL_ARN must be set. Redeploy with knowledge base parameters.',
     })
   }
 
-  const query = lastUserText(body?.messages)
-  if (!query) {
+  if (!hasUserText(body?.messages)) {
     return response(400, {
       detail: 'Request must include a non-empty user message.',
     })
   }
 
   const sessionId = body.session_id || randomUUID()
+  const query = buildQueryText(body.messages)
 
   try {
     const result = await getAgentRuntime().send(
-      new InvokeAgentCommand({
-        agentId: AGENT_ID,
-        agentAliasId: AGENT_ALIAS_ID,
-        sessionId,
-        inputText: query,
-        enableTrace: false,
+      new RetrieveAndGenerateCommand({
+        input: { text: query },
+        retrieveAndGenerateConfiguration: {
+          type: 'KNOWLEDGE_BASE',
+          knowledgeBaseConfiguration: {
+            knowledgeBaseId: KNOWLEDGE_BASE_ID,
+            modelArn: MODEL_ARN,
+            retrievalConfiguration: {
+              vectorSearchConfiguration: {
+                numberOfResults: 10,
+              },
+            },
+            generationConfiguration: {
+              promptTemplate: { textPromptTemplate: RAG_PROMPT_TEMPLATE },
+            },
+            orchestrationConfiguration: {
+              promptTemplate: { textPromptTemplate: ORCHESTRATION_PROMPT_TEMPLATE },
+            },
+          },
+        },
       }),
     )
 
-    const { answer, citations } = await consumeAgentCompletion(result.completion)
-    const sources = referencesToSources(citations)
+    const answer = String(result.output?.text || '').trim()
+    const sources = referencesToSources(result.citations)
 
     return response(200, {
       answer:
@@ -186,15 +205,15 @@ async function handleChat(body) {
         "I wasn't able to generate a response. Please try again.",
       sources,
       session_id: sessionId,
-      model_used: `bedrock-agent:${AGENT_ID}`,
+      model_used: `bedrock-kb:${KNOWLEDGE_BASE_ID}`,
       is_mock: false,
     })
   } catch (err) {
     const code = err?.name || err?.Code || 'Error'
     const message = err?.message || String(err)
-    console.error('InvokeAgent failed', code, err)
+    console.error('RetrieveAndGenerate failed', code, err)
     return response(502, {
-      detail: `Agent request failed (${code}): ${message}`,
+      detail: `Knowledge base request failed (${code}): ${message}`,
     })
   }
 }
@@ -210,12 +229,12 @@ export async function handler(event) {
 
   if (method === 'GET' && (path === '/api/v1/health' || path === '/health')) {
     return response(200, {
-      status: AGENT_ID && AGENT_ALIAS_ID ? 'ok' : 'misconfigured',
+      status: KNOWLEDGE_BASE_ID && MODEL_ARN ? 'ok' : 'misconfigured',
       region: BEDROCK_REGION,
       runtime: 'nodejs',
-      agent_id: AGENT_ID || null,
-      agent_alias_id: AGENT_ALIAS_ID || null,
-      mode: 'agent',
+      knowledge_base_id: KNOWLEDGE_BASE_ID || null,
+      model_arn: MODEL_ARN || null,
+      mode: 'retrieve-and-generate',
     })
   }
 
