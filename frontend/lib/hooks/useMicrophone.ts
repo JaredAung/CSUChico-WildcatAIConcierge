@@ -12,7 +12,61 @@ export interface UseMicrophoneReturn {
   stopRecording: () => void
 }
 
-// ─── Event-stream encoding/decoding helpers ──────────────────────────────────
+// ─── CRC-32 implementation ───────────────────────────────────────────────────
+
+const CRC32_TABLE = (() => {
+  const table = new Uint32Array(256)
+  for (let i = 0; i < 256; i++) {
+    let crc = i
+    for (let j = 0; j < 8; j++) {
+      crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1
+    }
+    table[i] = crc >>> 0
+  }
+  return table
+})()
+
+function crc32(data: Uint8Array): number {
+  let crc = 0xffffffff
+  for (let i = 0; i < data.length; i++) {
+    crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ data[i]) & 0xff]
+  }
+  return (crc ^ 0xffffffff) >>> 0
+}
+
+// ─── Event-stream encoding helpers ───────────────────────────────────────────
+
+function encodeHeaders(
+  headers: Record<string, { type: number; value: string }>,
+): Uint8Array {
+  const parts: Uint8Array[] = []
+
+  for (const [name, { type, value }] of Object.entries(headers)) {
+    const nameBytes = new TextEncoder().encode(name)
+    const valueBytes = new TextEncoder().encode(value)
+    const headerLength = 1 + nameBytes.length + 1 + 2 + valueBytes.length
+    const header = new Uint8Array(headerLength)
+    const headerView = new DataView(header.buffer)
+
+    let off = 0
+    headerView.setUint8(off, nameBytes.length); off += 1
+    header.set(nameBytes, off); off += nameBytes.length
+    headerView.setUint8(off, type); off += 1
+    headerView.setUint16(off, valueBytes.length, false); off += 2
+    header.set(valueBytes, off)
+
+    parts.push(header)
+  }
+
+  const totalLength = parts.reduce((sum, p) => sum + p.length, 0)
+  const result = new Uint8Array(totalLength)
+  let offset = 0
+  for (const part of parts) {
+    result.set(part, offset)
+    offset += part.length
+  }
+  return result
+}
 
 function encodeAudioEvent(pcmBuffer: ArrayBuffer): ArrayBuffer {
   const headers = encodeHeaders({
@@ -21,58 +75,34 @@ function encodeAudioEvent(pcmBuffer: ArrayBuffer): ArrayBuffer {
     ':content-type': { type: 7, value: 'application/octet-stream' },
   })
 
-  const totalLength = 4 + 4 + 4 + headers.byteLength + pcmBuffer.byteLength + 4
-  const message = new ArrayBuffer(totalLength)
-  const view = new DataView(message)
+  const payloadBytes = new Uint8Array(pcmBuffer)
+  const totalLength = 4 + 4 + 4 + headers.length + payloadBytes.length + 4
+  const message = new Uint8Array(totalLength)
+  const view = new DataView(message.buffer)
 
+  // Write prelude (total length + headers length)
   let offset = 0
   view.setUint32(offset, totalLength, false); offset += 4
-  view.setUint32(offset, headers.byteLength, false); offset += 4
-  view.setUint32(offset, 0, false); offset += 4 // prelude CRC
+  view.setUint32(offset, headers.length, false); offset += 4
 
-  new Uint8Array(message, offset, headers.byteLength).set(new Uint8Array(headers))
-  offset += headers.byteLength
+  // Calculate and write prelude CRC (CRC of first 8 bytes)
+  const preludeCrc = crc32(message.subarray(0, 8))
+  view.setUint32(offset, preludeCrc, false); offset += 4
 
-  new Uint8Array(message, offset, pcmBuffer.byteLength).set(new Uint8Array(pcmBuffer))
-  offset += pcmBuffer.byteLength
+  // Write headers
+  message.set(headers, offset); offset += headers.length
 
-  view.setUint32(offset, 0, false) // message CRC
-  return message
+  // Write payload
+  message.set(payloadBytes, offset); offset += payloadBytes.length
+
+  // Calculate and write message CRC (CRC of everything before this point)
+  const messageCrc = crc32(message.subarray(0, offset))
+  view.setUint32(offset, messageCrc, false)
+
+  return message.buffer
 }
 
-function encodeHeaders(
-  headers: Record<string, { type: number; value: string }>,
-): ArrayBuffer {
-  const parts: Uint8Array[] = []
-
-  for (const [name, { type, value }] of Object.entries(headers)) {
-    const nameBytes = new TextEncoder().encode(name)
-    const valueBytes = new TextEncoder().encode(value)
-    const headerLength = 1 + nameBytes.length + 1 + 2 + valueBytes.length
-    const header = new ArrayBuffer(headerLength)
-    const headerView = new DataView(header)
-    const headerArray = new Uint8Array(header)
-
-    let off = 0
-    headerView.setUint8(off, nameBytes.length); off += 1
-    headerArray.set(nameBytes, off); off += nameBytes.length
-    headerView.setUint8(off, type); off += 1
-    headerView.setUint16(off, valueBytes.length, false); off += 2
-    headerArray.set(valueBytes, off)
-
-    parts.push(new Uint8Array(header))
-  }
-
-  const totalLength = parts.reduce((sum, p) => sum + p.length, 0)
-  const result = new ArrayBuffer(totalLength)
-  const resultArray = new Uint8Array(result)
-  let offset = 0
-  for (const part of parts) {
-    resultArray.set(part, offset)
-    offset += part.length
-  }
-  return result
-}
+// ─── Event-stream decoding helper ────────────────────────────────────────────
 
 function parseTranscribeMessage(
   data: ArrayBuffer,
@@ -81,8 +111,9 @@ function parseTranscribeMessage(
     const view = new DataView(data)
     const totalLength = view.getUint32(0, false)
     const headersLength = view.getUint32(4, false)
+    // Skip prelude CRC at offset 8
     const payloadOffset = 4 + 4 + 4 + headersLength
-    const payloadLength = totalLength - payloadOffset - 4
+    const payloadLength = totalLength - payloadOffset - 4 // subtract message CRC
 
     if (payloadLength <= 0) return null
 
@@ -140,6 +171,7 @@ export function useMicrophone(): UseMicrophoneReturn {
   const streamRef = useRef<MediaStream | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const isStoppingRef = useRef(false)
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -147,7 +179,7 @@ export function useMicrophone(): UseMicrophoneReturn {
     !!navigator.mediaDevices &&
     typeof navigator.mediaDevices.getUserMedia === 'function'
 
-  const stopRecording = useCallback(() => {
+  const cleanup = useCallback(() => {
     if (wsRef.current) {
       try {
         if (
@@ -176,9 +208,15 @@ export function useMicrophone(): UseMicrophoneReturn {
       })
       streamRef.current = null
     }
-
-    setIsRecording(false)
   }, [])
+
+  const stopRecording = useCallback(() => {
+    if (isStoppingRef.current) return // prevent re-entrancy
+    isStoppingRef.current = true
+    cleanup()
+    setIsRecording(false)
+    isStoppingRef.current = false
+  }, [cleanup])
 
   const startRecording = useCallback(
     async (languageCode: string) => {
@@ -186,6 +224,9 @@ export function useMicrophone(): UseMicrophoneReturn {
         setError('Your browser does not support microphone input.')
         return
       }
+
+      // Clean up any previous session
+      cleanup()
 
       setError(null)
       setTranscript('')
@@ -237,12 +278,35 @@ export function useMicrophone(): UseMicrophoneReturn {
         ws.binaryType = 'arraybuffer'
         wsRef.current = ws
 
-        let wsOpen = false
+        // Wait for WebSocket to open before wiring up audio
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            cleanup()
+            reject(
+              new Error(
+                'Could not connect to transcription service. Connection timed out.',
+              ),
+            )
+          }, 10000)
 
-        ws.onopen = () => {
-          wsOpen = true
-          setIsRecording(true)
-        }
+          ws.onopen = () => {
+            clearTimeout(timeout)
+            resolve()
+          }
+
+          ws.onerror = () => {
+            clearTimeout(timeout)
+            cleanup()
+            reject(
+              new Error(
+                'Could not connect to transcription service. Please try again.',
+              ),
+            )
+          }
+        })
+
+        // Connection is open — wire up audio and message handlers
+        setIsRecording(true)
 
         ws.onmessage = (event) => {
           if (event.data instanceof ArrayBuffer) {
@@ -262,30 +326,27 @@ export function useMicrophone(): UseMicrophoneReturn {
           }
         }
 
-        ws.onerror = () => {
-          setError(
-            'Voice connection error. Your transcribed text is preserved — you can send it or try again.',
-          )
-          stopRecording()
-        }
-
         ws.onclose = (event) => {
-          if (!event.wasClean && wsOpen) {
+          if (!event.wasClean) {
             setError(
               'Voice connection was interrupted. Your transcribed text is preserved — you can send it or try again.',
             )
           }
-          stopRecording()
+          cleanup()
+          setIsRecording(false)
         }
 
-        // 5. Audio processing pipeline
-        processor.onaudioprocess = (e) => {
-          if (
-            !wsOpen ||
-            !wsRef.current ||
-            wsRef.current.readyState !== WebSocket.OPEN
+        ws.onerror = () => {
+          setError(
+            'Voice connection error. Your transcribed text is preserved — you can send it or try again.',
           )
-            return
+          cleanup()
+          setIsRecording(false)
+        }
+
+        // 5. Audio processing pipeline — only starts after WS is confirmed open
+        processor.onaudioprocess = (e) => {
+          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
 
           const inputData = e.inputBuffer.getChannelData(0)
           const pcmFloat =
@@ -299,48 +360,15 @@ export function useMicrophone(): UseMicrophoneReturn {
 
         source.connect(processor)
         processor.connect(audioContext.destination)
-
-        // Wait for WebSocket to open
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(
-              new Error(
-                'Could not connect to transcription service. Please try again.',
-              ),
-            )
-          }, 10000)
-
-          ws.addEventListener(
-            'open',
-            () => {
-              clearTimeout(timeout)
-              resolve()
-            },
-            { once: true },
-          )
-
-          ws.addEventListener(
-            'error',
-            () => {
-              clearTimeout(timeout)
-              reject(
-                new Error(
-                  'Could not connect to transcription service. Please try again.',
-                ),
-              )
-            },
-            { once: true },
-          )
-        })
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'An unexpected error occurred.'
         setError(message)
+        cleanup()
         setIsRecording(false)
-        stopRecording()
       }
     },
-    [isSupported, stopRecording],
+    [isSupported, cleanup],
   )
 
   return {
