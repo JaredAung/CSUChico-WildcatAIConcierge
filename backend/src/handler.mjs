@@ -3,7 +3,7 @@
  *
  * GET  /api/v1/health
  * POST /api/v1/chat  (InvokeAgent — answer + citations; multi-turn via sessionId)
- */
+*/
 
 import { randomUUID } from 'node:crypto'
 import {
@@ -86,7 +86,11 @@ function lastUserText(messages) {
   return ''
 }
 
-/** Map Agent / KB citation refs → frontend Source[]. */
+/**
+ * Map Agent / KB citation refs → frontend Source[].
+ * Handles refs from both chunk.attribution (managed KB) and
+ * knowledgeBaseLookupOutput (unstructured KB via trace).
+ */
 function referencesToSources(citations) {
   const sources = []
   const seen = new Set()
@@ -126,7 +130,10 @@ function referencesToSources(citations) {
   return sources
 }
 
-/** Consume InvokeAgent completion stream: answer bytes + attribution citations. */
+/**
+ * Consume InvokeAgent completion stream: answer bytes + citations from both
+ * chunk.attribution (managed KB) and trace observation (unstructured KB).
+ */
 async function consumeAgentCompletion(completion) {
   let answer = ''
   const citations = []
@@ -143,6 +150,17 @@ async function consumeAgentCompletion(completion) {
     const chunkCitations = chunk?.attribution?.citations
     if (Array.isArray(chunkCitations) && chunkCitations.length) {
       citations.push(...chunkCitations)
+    }
+
+    // ── Path 2: unstructured KB — citations in orchestration trace ────────────
+    // Requires enableTrace: true on the InvokeAgentCommand call.
+    // Raw retrievedReferences are wrapped into a citation-shaped object so
+    // referencesToSources() can process both paths uniformly.
+    const kbRefs =
+      event.trace?.orchestrationTrace?.observation
+        ?.knowledgeBaseLookupOutput?.retrievedReferences
+    if (Array.isArray(kbRefs) && kbRefs.length) {
+      citations.push({ retrievedReferences: kbRefs })
     }
   }
 
@@ -173,7 +191,9 @@ async function handleChat(body) {
         agentAliasId: AGENT_ALIAS_ID,
         sessionId,
         inputText: query,
-        enableTrace: false,
+        // enableTrace must be true to receive knowledgeBaseLookupOutput
+        // events in the stream — required for unstructured KB citations.
+        enableTrace: true,
       }),
     )
 
