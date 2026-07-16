@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react'
@@ -147,10 +148,10 @@ export function MessageBubble({ message, onThumbsUp, onThumbsDown, className }: 
       {/* ── Assistant Avatar ─────────────────────────────────────── */}
       {!isUser && (
         <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-lg select-none mt-1"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary overflow-hidden mt-1"
           aria-hidden="true"
         >
-          🐾
+          <Image src="/Chico logo.png" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
         </div>
       )}
 

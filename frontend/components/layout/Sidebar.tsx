@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -30,19 +31,22 @@ const navLinks = [
   { href: '/about', label: 'About', Icon: Info },
 ] as const
 
-const SUGGESTED_QUESTIONS = [
+// ─── Default suggested questions ─────────────────────────────────────────────
+
+const DEFAULT_QUESTIONS = [
   'Where do I park?',
   'Where do I eat?',
   'What events are happening?',
   'How do I get a parking permit?',
-  "I'm deaf and want to attend a concert at Laxson — how do I request an interpreter?",
-  'How do I reserve a campus facility for an event?',
+  'How do I request disability accommodations?',
+  'How do I rent a campus facility?',
 ]
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
   const pathname = usePathname()
+  const questions = DEFAULT_QUESTIONS
 
   return (
     <aside
@@ -57,11 +61,17 @@ export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
         <Link
           href="/"
           className="flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Wildcat AI Concierge — Home"
+          aria-label="Wildcat Navigator — Home"
         >
-          <span className="text-xl select-none" aria-hidden="true">🐾</span>
+          <Image
+            src="/Chico logo.png"
+            alt="CSU Chico"
+            width={28}
+            height={28}
+            className="h-7 w-auto object-contain shrink-0"
+          />
           <div className="leading-none">
-            <p className="font-semibold text-sm text-foreground">Wildcat AI</p>
+            <p className="font-semibold text-sm text-foreground">Wildcat Navigator</p>
             <p className="text-xs text-muted-foreground">CSU Chico</p>
           </div>
         </Link>
@@ -118,7 +128,7 @@ export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
           role="list"
           aria-labelledby="sidebar-suggestions-label"
         >
-          {SUGGESTED_QUESTIONS.map((q, i) => (
+          {questions.map((q, i) => (
             <li key={i}>
               <button
                 type="button"

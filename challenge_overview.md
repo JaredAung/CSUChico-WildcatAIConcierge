@@ -1,4 +1,4 @@
-# Challenge Overview: Wildcat AI Concierge — Conversational access to campus services, policies, and facility resources
+# Challenge Overview: Wildcat Navigator — Conversational access to campus services, policies, and facility resources
 
 ## Project Objectives
 - Deliver a single conversational interface that answers campus service questions and guides users through processes end-to-end.

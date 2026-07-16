@@ -1,4 +1,4 @@
-# Wildcat AI Concierge — Planning
+# Wildcat Navigator — Planning
 
 Conversational access to campus services, policies, and facility resources.
 

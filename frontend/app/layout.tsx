@@ -15,8 +15,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Wildcat AI Concierge - CSU Chico',
-    template: '%s | Wildcat AI Concierge',
+    default: 'Wildcat Navigator - CSU Chico',
+    template: '%s | Wildcat Navigator',
   },
   description:
     'Your AI-powered campus guide for California State University, Chico. ' +
@@ -37,20 +37,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://ai.csuchico.edu',
-    title: 'Wildcat AI Concierge - CSU Chico',
+    title: 'Wildcat Navigator - CSU Chico',
     description:
       'Your AI-powered campus guide for California State University, Chico.',
-    siteName: 'Wildcat AI Concierge',
+    siteName: 'Wildcat Navigator',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Wildcat AI Concierge - CSU Chico',
+    title: 'Wildcat Navigator - CSU Chico',
     description:
       'Your AI-powered campus guide for California State University, Chico.',
   },
   robots: {
     index: true,
     follow: true,
+  },
+  icons: {
+    icon: '/Chico logo.png',
+    shortcut: '/Chico logo.png',
+    apple: '/Chico logo.png',
   },
 }
 
