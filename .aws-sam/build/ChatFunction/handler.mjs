@@ -21,19 +21,7 @@ const RAG_PROMPT_TEMPLATE = `${AGENT_INSTRUCTIONS}
 
 Use the search results below — and only the search results below — to answer the user's question.
 
-User question: $query$
-
 $search_results$
-
-Respond directly with the answer in markdown. Do not include any confidence scores, metadata, or preamble — just the helpful answer.`
-
-// Bedrock requires an orchestration template whenever the generation template is
-// customized. It must contain $conversation_history$ and $output_format_instructions$.
-const ORCHESTRATION_PROMPT_TEMPLATE = `Formulate a search query for the knowledge base based on the conversation history below, focused on retrieving information relevant to the latest message. If the user's message is not in English, translate the core intent into English for the search query.
-
-$query$
-
-$conversation_history$
 
 $output_format_instructions$`
 
@@ -93,25 +81,16 @@ function methodOf(event) {
   ).toUpperCase()
 }
 
-function hasUserText(messages) {
-  return (
-    Array.isArray(messages) &&
-    messages.some((msg) => msg?.role === 'user' && String(msg.content || '').trim())
-  )
-}
-
-/**
- * Bedrock's RetrieveAndGenerate sessionId must be one Bedrock itself issued —
- * it rejects a client-generated ID. We don't track that server-side, so instead
- * fold the client's full message history into the query text on every call.
- */
-function buildQueryText(messages) {
+function lastUserText(messages) {
   if (!Array.isArray(messages)) return ''
-  return messages
-    .filter((msg) => msg?.role === 'user' || msg?.role === 'assistant')
-    .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${String(msg.content || '').trim()}`)
-    .filter((line) => line !== 'User:' && line !== 'Assistant:')
-    .join('\n')
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    if (msg?.role === 'user') {
+      const text = String(msg.content || '').trim()
+      if (text) return text
+    }
+  }
+  return ''
 }
 
 /** Map KB citation refs → frontend Source[]. */
@@ -162,34 +141,29 @@ async function handleChat(body) {
     })
   }
 
-  if (!hasUserText(body?.messages)) {
+  const query = lastUserText(body?.messages)
+  if (!query) {
     return response(400, {
       detail: 'Request must include a non-empty user message.',
     })
   }
 
   const sessionId = body.session_id || randomUUID()
-  const query = buildQueryText(body.messages)
 
   try {
     const result = await getAgentRuntime().send(
       new RetrieveAndGenerateCommand({
         input: { text: query },
+        // Omit sessionId on the first turn — Bedrock rejects a client-generated
+        // sessionId it hasn't issued itself; it returns its own on first call.
+        ...(body.session_id ? { sessionId: body.session_id } : {}),
         retrieveAndGenerateConfiguration: {
           type: 'KNOWLEDGE_BASE',
           knowledgeBaseConfiguration: {
             knowledgeBaseId: KNOWLEDGE_BASE_ID,
             modelArn: MODEL_ARN,
-            retrievalConfiguration: {
-              vectorSearchConfiguration: {
-                numberOfResults: 10,
-              },
-            },
             generationConfiguration: {
               promptTemplate: { textPromptTemplate: RAG_PROMPT_TEMPLATE },
-            },
-            orchestrationConfiguration: {
-              promptTemplate: { textPromptTemplate: ORCHESTRATION_PROMPT_TEMPLATE },
             },
           },
         },
@@ -204,7 +178,7 @@ async function handleChat(body) {
         answer ||
         "I wasn't able to generate a response. Please try again.",
       sources,
-      session_id: sessionId,
+      session_id: result.sessionId || sessionId,
       model_used: `bedrock-kb:${KNOWLEDGE_BASE_ID}`,
       is_mock: false,
     })
