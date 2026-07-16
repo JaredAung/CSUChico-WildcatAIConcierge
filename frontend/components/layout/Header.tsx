@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
@@ -59,10 +60,17 @@ export function Header({ className, showNav = false }: HeaderProps) {
             className="flex items-center gap-3 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary shrink-0"
             aria-label="Wildcat AI Concierge — Home"
           >
-            <span className="text-2xl select-none" aria-hidden="true">🐾</span>
+            <Image
+              src="/Chico logo.png"
+              alt="CSU Chico"
+              width={40}
+              height={40}
+              className="h-10 w-auto object-contain"
+              priority
+            />
             <div className="flex flex-col leading-none">
               <span className="font-bold text-base sm:text-lg tracking-tight text-white">
-                Wildcat AI Concierge
+                Wildcat Navigator
               </span>
               <span className="text-[11px] text-white/70 font-medium tracking-wide hidden sm:block">
                 California State University, Chico

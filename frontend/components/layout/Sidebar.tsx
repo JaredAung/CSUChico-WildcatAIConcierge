@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -62,7 +63,13 @@ export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
           className="flex items-center gap-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Wildcat AI Concierge — Home"
         >
-          <span className="text-xl select-none" aria-hidden="true">🐾</span>
+          <Image
+            src="/Chico logo.png"
+            alt="CSU Chico"
+            width={28}
+            height={28}
+            className="h-7 w-auto object-contain shrink-0"
+          />
           <div className="leading-none">
             <p className="font-semibold text-sm text-foreground">Wildcat AI</p>
             <p className="text-xs text-muted-foreground">CSU Chico</p>

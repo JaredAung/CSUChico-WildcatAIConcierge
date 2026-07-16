@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { v4 as uuidv4 } from 'uuid'
 import {
   Send,
@@ -247,8 +248,15 @@ function ChatContent() {
               className="flex items-center gap-2.5 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Wildcat AI Concierge — Home"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-scarlet-600 to-scarlet-800 text-white shadow-sm ring-2 ring-primary/20 text-sm select-none">
-                🐾
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary shadow-sm ring-2 ring-primary/20 overflow-hidden">
+                <Image
+                  src="/Chico logo.png"
+                  alt="CSU Chico"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-contain"
+                  priority
+                />
               </div>
               <div className="hidden sm:flex flex-col leading-none">
                 <span className="font-bold text-sm text-foreground tracking-tight">Wildcat AI Concierge</span>
@@ -322,7 +330,9 @@ function ChatContent() {
             {/* Typing indicator */}
             {isLoading && (
               <div className="flex items-start gap-3 chat-bubble-assistant">
-                <div className="avatar-ai mt-0.5" aria-hidden="true">🐾</div>
+                <div className="avatar-ai mt-0.5 overflow-hidden" aria-hidden="true">
+                  <Image src="/Chico logo.png" alt="" width={32} height={32} className="h-full w-full object-contain" />
+                </div>
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] font-semibold tracking-wide uppercase text-primary/80 px-1">
                     Wildcat AI
@@ -448,7 +458,9 @@ export default function ChatPage() {
       fallback={
         <div className="flex h-screen items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
-            <span className="text-4xl animate-pulse-soft" aria-hidden="true">🐾</span>
+            <span className="text-4xl animate-pulse-soft" aria-hidden="true">
+              <Image src="/Chico logo.png" alt="Loading" width={48} height={48} className="h-12 w-auto object-contain" />
+            </span>
             <p className="text-sm">Loading chat…</p>
           </div>
         </div>
