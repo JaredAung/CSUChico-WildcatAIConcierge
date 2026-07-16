@@ -21,7 +21,7 @@ const config: Config = {
         // CSU Chico brand colors
         scarlet: {
           DEFAULT: '#a32f3b',
-          50: '#fdf2f3',
+          50:  '#fdf2f3',
           100: '#fce7e9',
           200: '#f9d2d6',
           300: '#f4adb4',
@@ -35,7 +35,7 @@ const config: Config = {
         },
         gold: {
           DEFAULT: '#FFC72C',
-          50: '#fffbeb',
+          50:  '#fffbeb',
           100: '#fff4c7',
           200: '#ffe889',
           300: '#ffd74b',
@@ -47,6 +47,7 @@ const config: Config = {
           900: '#793b0a',
           950: '#461d00',
         },
+        'chico-dark': '#1a1a1a',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

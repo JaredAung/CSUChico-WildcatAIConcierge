@@ -78,7 +78,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
 
       {/* ── Top utility bar (mimics csuchico.edu) ────────────────── */}
-      <div className="bg-[#1a1a1a] text-white text-xs py-1.5 px-4 hidden sm:block">
+      <div className="bg-chico-dark text-white text-xs py-1.5 px-4 hidden sm:block">
         <div className="container mx-auto max-w-7xl flex items-center justify-between">
           <span className="text-white/60">California State University, Chico</span>
           <nav aria-label="Utility navigation" className="flex items-center gap-4">
@@ -129,13 +129,13 @@ export default function LandingPage() {
                 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]"
               >
                 Campus Info.{' '}
-                <span className="text-[#FFC72C]">Instantly.</span>
+                <span className="text-gold-400">Instantly.</span>
               </h1>
 
               <p className="text-lg sm:text-xl text-white/85 leading-relaxed max-w-lg">
-                The Wildcat AI Concierge answers your questions about CSU Chico
-                campus services — parking, dining, accessibility, events, and more.
-                No searching. Just ask.
+                Ask Wildcat Navigator any questions you have about CSU Chico
+                campus services such as parking, dining, accessibility, events, and more.
+                No searching. Just ask and I'll answer it for you.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -156,7 +156,6 @@ export default function LandingPage() {
                   size="xl"
                   className="border-white/50 text-white bg-white/10 hover:bg-white/20 hover:border-white font-semibold text-base backdrop-blur-sm"
                 >
-                  <Link href="/about">How It Works</Link>
                 </Button>
               </div>
             </div>
@@ -186,12 +185,12 @@ export default function LandingPage() {
         </section>
 
         {/* ── Stats bar — matches csuchico.edu achievement numbers ─ */}
-        <section className="bg-[#1a1a1a] text-white py-8 px-4" aria-label="Campus statistics">
+        <section className="bg-chico-dark text-white py-8 px-4" aria-label="Campus statistics">
           <div className="container mx-auto max-w-5xl">
             <ul className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center" role="list">
               {STATS.map(({ value, label, sub }) => (
                 <li key={value} className="space-y-1">
-                  <div className="text-3xl sm:text-4xl font-bold text-[#FFC72C]">{value}</div>
+                  <div className="text-3xl sm:text-4xl font-bold text-gold-400">{value}</div>
                   <div className="text-sm font-semibold">{label}</div>
                   <div className="text-xs text-white/60">{sub}</div>
                 </li>
@@ -199,172 +198,10 @@ export default function LandingPage() {
             </ul>
           </div>
         </section>
-
-        {/* ── Quick links bar — mirrors csuchico.edu nav topics ──── */}
-        <section className="bg-muted/60 border-b border-border py-4 px-4" aria-label="Quick links to CSU Chico">
-          <div className="container mx-auto max-w-5xl">
-            <ul className="flex flex-wrap items-center justify-center gap-2 sm:gap-4" role="list">
-              {QUICK_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-full hover:bg-primary/10"
-                  >
-                    {label} →
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* ── Suggested Questions ─────────────────────────────────── */}
-        <section
-          className="py-14 px-4"
-          aria-labelledby="questions-heading"
-        >
-          <div className="container mx-auto max-w-5xl">
-            <div className="text-center mb-8">
-              <h2
-                id="questions-heading"
-                className="text-2xl sm:text-3xl font-bold text-foreground"
-              >
-                What Can I Help You With?
-              </h2>
-              <p className="mt-2 text-muted-foreground">
-                Click any question to start a conversation — or type your own.
-              </p>
-            </div>
-
-            <ul
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-              role="list"
-              aria-label="Suggested questions"
-            >
-              {SUGGESTED_QUESTIONS.map((question) => (
-                <li key={question}>
-                  <Link
-                    href={`/chat?q=${encodeURIComponent(question)}`}
-                    className={[
-                      'group flex items-center justify-between gap-3 rounded-xl',
-                      'border border-border bg-card px-4 py-4 text-sm font-medium text-foreground',
-                      'shadow-sm hover:shadow-md hover:border-primary/50 hover:bg-primary/5',
-                      'transition-all duration-200',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    ].join(' ')}
-                    aria-label={`Ask: ${question}`}
-                  >
-                    <span className="leading-snug">{question}</span>
-                    <ChevronRight
-                      className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="text-center mt-8">
-              <Button asChild size="lg" className="font-semibold">
-                <Link href="/chat">
-                  <MessageSquare className="w-4 h-4" aria-hidden="true" />
-                  Open the AI Concierge
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── "Tomorrow Calls" style bold CTA ─────────────────────── */}
-        <section
-          className="bg-primary text-primary-foreground py-16 px-4"
-          aria-labelledby="cta-heading"
-        >
-          <div className="container mx-auto max-w-4xl text-center space-y-6">
-            <h2
-              id="cta-heading"
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
-            >
-              Campus Answers.{' '}
-              <span className="text-[#FFC72C]">Right Now.</span>
-            </h2>
-            <p className="text-lg text-primary-foreground/80 max-w-xl mx-auto">
-              No more searching through dozens of websites. The Wildcat AI Concierge
-              knows CSU Chico — and it's ready to help.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Button
-                asChild
-                size="xl"
-                className="bg-white text-primary hover:bg-white/90 font-bold shadow-lg"
-              >
-                <Link href="/chat">
-                  <MessageSquare className="w-5 h-5" aria-hidden="true" />
-                  Start Chatting
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="xl"
-                className="border-white/50 text-white bg-transparent hover:bg-white/10 hover:border-white font-semibold"
-              >
-                <Link href="/about">Learn More</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Features ─────────────────────────────────────────────── */}
-        <section
-          className="py-14 px-4 bg-muted/30"
-          aria-labelledby="features-heading"
-        >
-          <div className="container mx-auto max-w-5xl">
-            <div className="text-center mb-10">
-              <h2
-                id="features-heading"
-                className="text-2xl sm:text-3xl font-bold text-foreground"
-              >
-                Built for Every Wildcat
-              </h2>
-              <p className="mt-2 text-muted-foreground max-w-xl mx-auto">
-                Students, faculty, staff, visitors, and community members — the Wildcat AI Concierge is for everyone.
-              </p>
-            </div>
-
-            <ul
-              className="grid grid-cols-1 md:grid-cols-3 gap-6"
-              role="list"
-              aria-label="Key features"
-            >
-              {FEATURES.map(({ Icon, title, description, color, bgColor }) => (
-                <li key={title}>
-                  <Card className="h-full hover:shadow-md transition-shadow duration-200 rounded-xl">
-                    <CardHeader className="pb-3">
-                      <div className={`w-12 h-12 rounded-xl ${bgColor} flex items-center justify-center mb-3`}>
-                        <Icon className={`w-6 h-6 ${color}`} aria-hidden="true" />
-                      </div>
-                      <CardTitle className="text-base font-bold">{title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-sm leading-relaxed">
-                        {description}
-                      </CardDescription>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
       </main>
 
       {/* ── Footer — matches csuchico.edu footer ─────────────────── */}
-      <footer className="bg-[#1a1a1a] text-white" role="contentinfo">
+      <footer className="bg-chico-dark text-white" role="contentinfo">
         <div className="container mx-auto max-w-5xl px-4 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8">
             {/* Brand */}

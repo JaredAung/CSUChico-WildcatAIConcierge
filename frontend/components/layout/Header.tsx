@@ -97,7 +97,7 @@ export function Header({ className, showNav = false }: HeaderProps) {
 
             {/* Chat CTA button */}
             <Button asChild size="sm"
-              className="hidden sm:flex bg-[#FFC72C] text-[#1a1a1a] hover:bg-[#e6b228] font-bold text-xs mr-1">
+              className="hidden sm:flex bg-gold-400 text-chico-dark hover:bg-gold-500 font-bold text-xs mr-1">
               <Link href="/chat">
                 <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
                 Ask a Question

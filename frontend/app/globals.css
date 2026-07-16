@@ -4,85 +4,101 @@
 
 @layer base {
   :root {
-    /* Light theme */
-    --background: 220 20% 97%;
-    --foreground: 220 25% 12%;
+    /* ── Light theme ─────────────────────────────────────────────
+       Scarlet:  #a32f3b  →  hsl(352 57% 42%)
+       Gold:     #FFC72C  →  hsl(42  100% 59%)
+       Off-white background with a faint warm tint
+    ──────────────────────────────────────────────────────────── */
+    --background: 352 15% 97%;
+    --foreground: 352 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 12%;
+    --card-foreground: 352 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 12%;
+    --popover-foreground: 352 20% 10%;
 
     /* Primary: CSU Chico Scarlet #a32f3b */
     --primary: 352 57% 42%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: warm neutral */
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 220 25% 20%;
+    /* Secondary: warm tinted neutral */
+    --secondary: 352 18% 93%;
+    --secondary-foreground: 352 20% 18%;
 
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 352 12% 92%;
+    --muted-foreground: 352 8% 48%;
 
     /* Accent: CSU Chico Gold #FFC72C */
     --accent: 42 100% 59%;
-    --accent-foreground: 30 30% 10%;
+    --accent-foreground: 30 40% 10%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
+    --border: 352 14% 87%;
+    --input: 352 14% 87%;
     --ring: 352 57% 42%;
 
     --radius: 0.625rem;
 
     /* Chat-specific tokens */
-    --chat-bg: 220 20% 97%;
+    --chat-bg: 352 15% 96%;
     --bubble-user-from: 352 57% 42%;
     --bubble-user-to: 352 57% 32%;
     --bubble-ai-bg: 0 0% 100%;
     --sidebar-bg: 0 0% 100%;
-    --header-bg: 0 0% 100%;
+    --header-bg: 352 57% 42%;
+
+    /* Brand utility tokens */
+    --chico-dark: 0 0% 10%;
+    --chico-gold: 42 100% 59%;
+    --chico-gold-hover: 42 100% 50%;
   }
 
   .dark {
-    --background: 224 30% 8%;
-    --foreground: 214 32% 92%;
+    /* ── Dark theme ───────────────────────────────────────────────
+       Deep charcoal base, scarlet accents, gold highlights
+    ──────────────────────────────────────────────────────────── */
+    --background: 352 18% 8%;
+    --foreground: 352 10% 92%;
 
-    --card: 224 28% 11%;
-    --card-foreground: 214 32% 92%;
+    --card: 352 16% 11%;
+    --card-foreground: 352 10% 92%;
 
-    --popover: 224 28% 11%;
-    --popover-foreground: 214 32% 92%;
+    --popover: 352 16% 11%;
+    --popover-foreground: 352 10% 92%;
 
-    /* Primary stays scarlet, brightened for dark bg */
-    --primary: 352 57% 54%;
+    /* Primary brightened for dark bg — still clearly scarlet */
+    --primary: 352 57% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 24% 18%;
-    --secondary-foreground: 214 32% 90%;
+    --secondary: 352 18% 18%;
+    --secondary-foreground: 352 10% 88%;
 
-    --muted: 224 24% 16%;
-    --muted-foreground: 215 16% 55%;
+    --muted: 352 14% 16%;
+    --muted-foreground: 352 8% 55%;
 
     --accent: 42 100% 59%;
-    --accent-foreground: 30 30% 10%;
+    --accent-foreground: 30 40% 10%;
 
-    --destructive: 0 62.8% 55%;
+    --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 20% 20%;
-    --input: 224 20% 20%;
-    --ring: 352 57% 54%;
+    --border: 352 16% 20%;
+    --input: 352 16% 20%;
+    --ring: 352 57% 56%;
 
-    --chat-bg: 224 30% 8%;
-    --bubble-user-from: 352 57% 54%;
+    --chat-bg: 352 18% 8%;
+    --bubble-user-from: 352 57% 56%;
     --bubble-user-to: 352 57% 42%;
-    --bubble-ai-bg: 224 28% 13%;
-    --sidebar-bg: 224 28% 10%;
-    --header-bg: 224 28% 10%;
+    --bubble-ai-bg: 352 16% 13%;
+    --sidebar-bg: 352 16% 10%;
+    --header-bg: 352 57% 42%;
+
+    --chico-dark: 0 0% 10%;
+    --chico-gold: 42 100% 59%;
+    --chico-gold-hover: 42 100% 50%;
   }
 }
 
@@ -197,8 +213,8 @@
   /* ── Avatar ring ────────────────────────────────────────── */
   .avatar-ai {
     @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-           bg-gradient-to-br from-scarlet-600 to-scarlet-800
-           text-white text-base select-none shadow-sm ring-2 ring-primary/20;
+           bg-primary overflow-hidden
+           shadow-sm ring-2 ring-primary/20;
   }
 
   .avatar-user {
@@ -211,7 +227,7 @@
   .chip {
     @apply shrink-0 rounded-full border border-border bg-card px-3.5 py-1.5
            text-xs font-medium text-foreground whitespace-nowrap
-           hover:border-primary/60 hover:bg-primary/5 hover:text-primary
+           hover:border-primary/60 hover:bg-primary/10 hover:text-primary
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
            transition-all duration-150 cursor-pointer
            disabled:opacity-50 disabled:pointer-events-none
@@ -223,6 +239,18 @@
     @apply bg-card border border-border rounded-2xl shadow-sm
            focus-within:ring-2 focus-within:ring-ring focus-within:border-primary/50
            transition-all duration-200;
+  }
+
+  /* ── Gold CTA button ────────────────────────────────────── */
+  .btn-gold {
+    background-color: hsl(var(--chico-gold));
+    color: hsl(var(--chico-dark));
+    @apply font-bold hover:opacity-90 transition-opacity;
+  }
+
+  /* ── Scarlet section (stats bars, footers etc.) ─────────── */
+  .bg-chico-dark {
+    background-color: hsl(var(--chico-dark));
   }
 }
 
@@ -260,10 +288,10 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.25;
+    opacity: 0.20;
   }
   .dark .campus-bg {
-    opacity: 0.15;
+    opacity: 0.12;
   }
 
   /* Glass effect */
@@ -274,6 +302,11 @@
   /* Gradient text */
   .gradient-text {
     @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+  }
+
+  /* Gold highlight text */
+  .text-gold {
+    color: hsl(var(--chico-gold));
   }
 }
 
