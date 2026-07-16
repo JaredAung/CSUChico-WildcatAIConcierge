@@ -1,0 +1,18 @@
+{
+  "metadataAttributes": {
+    "type": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "restaurant"
+      },
+      "includeForEmbedding": true
+    },
+    "time": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "Monday to Sunday from 4PM TO 9PM; Pizza Window Opens at 3PM Daily"
+      },
+      "includeForEmbedding": false
+    }
+  }
+}

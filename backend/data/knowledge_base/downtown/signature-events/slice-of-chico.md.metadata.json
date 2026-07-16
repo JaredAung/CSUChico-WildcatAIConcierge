@@ -1,0 +1,25 @@
+{
+  "metadataAttributes": {
+    "type": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "signature_event"
+      },
+      "includeForEmbedding": true
+    },
+    "date": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "2026-07-11"
+      },
+      "includeForEmbedding": false
+    },
+    "time": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "10:00-17:00"
+      },
+      "includeForEmbedding": false
+    }
+  }
+}

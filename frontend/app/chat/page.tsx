@@ -142,7 +142,7 @@ function ChatContent() {
           meta: {
             sources: response.sources ?? [],
             departments: response.relevant_departments ?? [],
-            workflow: response.workflow_card ?? undefined,
+            workflow: response.workflow_card,
           },
         }
 

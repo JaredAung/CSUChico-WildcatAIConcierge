@@ -129,11 +129,6 @@ export function SourcePanel({ sources, departments = [], className }: SourcePane
                             <Badge variant={badgeVariant} className="text-xs py-0 shrink-0">
                               {type}
                             </Badge>
-                            {source.relevance_score !== undefined && (
-                              <span className="text-xs text-muted-foreground">
-                                {Math.round(source.relevance_score * 100)}% relevant
-                              </span>
-                            )}
                           </div>
                           <p className="text-sm font-medium leading-tight truncate" title={source.title}>
                             {source.title}

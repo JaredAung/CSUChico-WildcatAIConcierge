@@ -1,18 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Wildcat Navigator — API Gateway + Node.js Lambda + Bedrock Agent
+Description: Wildcat AI Concierge — API Gateway + Node.js Lambda + Bedrock Knowledge Base
 
 Parameters:
   BedrockRegion:
     Type: String
     Default: us-west-2
-    Description: Region where the Bedrock Agent is deployed
-  BedrockAgentId:
+    Description: Region where the Bedrock Knowledge Base is deployed
+  BedrockKnowledgeBaseId:
     Type: String
-    Description: Bedrock Agent ID
-  BedrockAgentAliasId:
+    Description: Bedrock Knowledge Base ID
+  BedrockModelArn:
     Type: String
-    Description: Bedrock Agent alias ID (e.g. TSTALIASID or a published alias)
+    Description: Foundation model or inference-profile ARN used to generate answers
   CorsAllowOrigin:
     Type: String
     Default: '*'
@@ -28,8 +28,8 @@ Globals:
     Environment:
       Variables:
         BEDROCK_REGION: !Ref BedrockRegion
-        BEDROCK_AGENT_ID: !Ref BedrockAgentId
-        BEDROCK_AGENT_ALIAS_ID: !Ref BedrockAgentAliasId
+        BEDROCK_KNOWLEDGE_BASE_ID: !Ref BedrockKnowledgeBaseId
+        BEDROCK_MODEL_ARN: !Ref BedrockModelArn
         CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
 
 Resources:
@@ -56,12 +56,15 @@ Resources:
       FunctionName: wildcat-ai-concierge-chat
       CodeUri: src/
       Handler: handler.handler
-      Description: Chat + health endpoints backed by Bedrock Agent
+      Description: Chat + health endpoints backed by Bedrock Knowledge Base
       Policies:
         - Statement:
             - Effect: Allow
               Action:
-                - bedrock:InvokeAgent
+                - bedrock:RetrieveAndGenerate
+                - bedrock:Retrieve
+                - bedrock:InvokeModel
+                - bedrock:GetInferenceProfile
               Resource: '*'
       Events:
         Health:

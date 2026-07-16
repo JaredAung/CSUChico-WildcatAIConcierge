@@ -1,0 +1,18 @@
+{
+  "metadataAttributes": {
+    "type": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "restaurant"
+      },
+      "includeForEmbedding": true
+    },
+    "time": {
+      "value": {
+        "type": "STRING",
+        "stringValue": "Saturday 11:30?AM–8:30?PM Sunday Closed Monday Closed Tuesday Closed Wednesday 11:30?AM–8:30?PM Thursday 11:30?AM–8:30?PM Friday 11:30?AM–8:30?PM Suggest new hours"
+      },
+      "includeForEmbedding": false
+    }
+  }
+}
