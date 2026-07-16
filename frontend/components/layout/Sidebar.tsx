@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -9,12 +8,10 @@ import {
   Info,
   Accessibility,
   ChevronRight,
-  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { DarkModeToggle } from '@/components/layout/Header'
-import { getSuggestedQuestions } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
@@ -33,29 +30,22 @@ const navLinks = [
   { href: '/about', label: 'About', Icon: Info },
 ] as const
 
+// ─── Default suggested questions ─────────────────────────────────────────────
+
+const DEFAULT_QUESTIONS = [
+  'Where do I park?',
+  'Where do I eat?',
+  'What events are happening?',
+  'How do I get a parking permit?',
+  'How do I request disability accommodations?',
+  'How do I rent a campus facility?',
+]
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
   const pathname = usePathname()
-  const [questions, setQuestions] = useState<string[]>([])
-  const [loadingQuestions, setLoadingQuestions] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const qs = await getSuggestedQuestions()
-        if (!cancelled) setQuestions(qs)
-      } catch {
-        // Silently fall back — sidebar still usable without suggestions
-        if (!cancelled) setQuestions([])
-      } finally {
-        if (!cancelled) setLoadingQuestions(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [])
+  const questions = DEFAULT_QUESTIONS
 
   return (
     <aside
@@ -126,40 +116,29 @@ export function Sidebar({ onSuggestedQuestion, className }: SidebarProps) {
           Suggested Questions
         </p>
 
-        {loadingQuestions ? (
-          <div className="flex items-center gap-2 px-2 py-3 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
-            <span className="text-xs">Loading suggestions…</span>
-          </div>
-        ) : questions.length === 0 ? (
-          <p className="px-2 text-xs text-muted-foreground italic">
-            No suggestions available.
-          </p>
-        ) : (
-          <ul
-            className="space-y-0.5"
-            role="list"
-            aria-labelledby="sidebar-suggestions-label"
-          >
-            {questions.map((q, i) => (
-              <li key={i}>
-                <button
-                  type="button"
-                  onClick={() => onSuggestedQuestion?.(q)}
-                  className={cn(
-                    'w-full text-left text-xs text-foreground leading-snug',
-                    'rounded-md px-2 py-2 hover:bg-muted hover:text-foreground',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    'transition-colors',
-                  )}
-                  aria-label={`Ask: ${q}`}
-                >
-                  {q}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul
+          className="space-y-0.5"
+          role="list"
+          aria-labelledby="sidebar-suggestions-label"
+        >
+          {questions.map((q, i) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => onSuggestedQuestion?.(q)}
+                className={cn(
+                  'w-full text-left text-xs text-foreground leading-snug',
+                  'rounded-md px-2 py-2 hover:bg-muted hover:text-foreground',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'transition-colors',
+                )}
+                aria-label={`Ask: ${q}`}
+              >
+                {q}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <Separator className="mt-3 mb-3" />

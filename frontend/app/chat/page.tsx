@@ -22,7 +22,7 @@ import { WorkflowCard } from '@/components/chat/WorkflowCard'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DarkModeToggle } from '@/components/layout/Header'
-import { sendMessage, getSuggestedQuestions } from '@/lib/api'
+import { sendMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { ChatMessage, ChatResponse, Source, Department, WorkflowCard as WorkflowCardType } from '@/lib/types'
 
@@ -32,8 +32,6 @@ interface AssistantMeta {
   sources: Source[]
   departments: Department[]
   workflow?: WorkflowCardType
-  confidence?: number
-  detected_language?: 'en' | 'es'
 }
 
 interface DisplayMessage extends ChatMessage {
@@ -67,14 +65,13 @@ function ChatContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const [sessionId] = useState<string>(() => uuidv4())
+  const [sessionId, setSessionId] = useState<string>(() => uuidv4())
   const [messages, setMessages] = useState<DisplayMessage[]>([buildWelcomeMessage()])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS)
-
+  const [chips] = useState<string[]>(DEFAULT_CHIPS)
   const bottomRef = useRef<HTMLDivElement>(null)
   const lastAssistantRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -88,15 +85,6 @@ function ChatContent() {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, isLoading])
-
-  // Load suggested chips from API
-  useEffect(() => {
-    getSuggestedQuestions()
-      .then((qs) => {
-        if (qs.length > 0) setChips(qs.slice(0, 4))
-      })
-      .catch(() => {}) // keep defaults on failure
-  }, [])
 
   // Auto-send ?q= param once
   useEffect(() => {
@@ -140,6 +128,11 @@ function ChatContent() {
       try {
         const response: ChatResponse = await sendMessage(history, sessionId)
 
+        // Keep Bedrock sessionId so later turns share answer/citation history.
+        if (response.session_id && response.session_id !== sessionId) {
+          setSessionId(response.session_id)
+        }
+
         const assistantMsg: DisplayMessage = {
           id: uuidv4(),
           role: 'assistant',
@@ -147,10 +140,8 @@ function ChatContent() {
           timestamp: new Date().toISOString(),
           meta: {
             sources: response.sources ?? [],
-            departments: response.departments ?? [],
-            workflow: response.workflow ?? undefined,
-            confidence: response.confidence,
-            detected_language: response.detected_language,
+            departments: response.relevant_departments ?? [],
+            workflow: response.workflow_card ?? undefined,
           },
         }
 
@@ -308,7 +299,6 @@ function ChatContent() {
               <div key={msg.id} ref={isLastAssistant ? lastAssistantRef : undefined} className="flex flex-col gap-2">
                 <MessageBubble
                   message={msg}
-                  detectedLanguage={msg.meta?.detected_language}
                   onThumbsUp={() => {}}
                   onThumbsDown={() => {}}
                 />
@@ -319,7 +309,6 @@ function ChatContent() {
                       <SourcePanel
                         sources={msg.meta.sources}
                         departments={msg.meta.departments}
-                        confidence={msg.meta.confidence}
                       />
                     )}
                     {msg.meta.workflow && (
