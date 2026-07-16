@@ -12,6 +12,8 @@ import type { ChatMessage } from '@/lib/types'
 
 interface MessageBubbleProps {
   message: ChatMessage
+  /** Optional: detected language for display */
+  detectedLanguage?: 'en' | 'es'
   /** Optional: fired when user clicks thumbs-up */
   onThumbsUp?: (messageId?: string) => void
   /** Optional: fired when user clicks thumbs-down */
@@ -129,7 +131,7 @@ function FeedbackButtons({
 
 // ─── MessageBubble ────────────────────────────────────────────────────────────
 
-export function MessageBubble({ message, onThumbsUp, onThumbsDown, className }: MessageBubbleProps) {
+export function MessageBubble({ message, detectedLanguage, onThumbsUp, onThumbsDown, className }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const timeLabel = message.timestamp
     ? formatTime(message.timestamp)

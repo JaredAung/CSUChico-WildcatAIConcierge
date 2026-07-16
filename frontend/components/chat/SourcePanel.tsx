@@ -21,6 +21,7 @@ import type { Source, Department } from '@/lib/types'
 interface SourcePanelProps {
   sources: Source[]
   departments?: Department[]
+  confidence?: number
   className?: string
 }
 

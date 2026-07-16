@@ -97,13 +97,21 @@ export interface ChatResponse {
   sources: Source[]
   /** Populated when the query triggers a workflow */
   workflow_card?: WorkflowCard
+  /** Alias: some backend versions use 'workflow' */
+  workflow?: WorkflowCard
   /** Related departments pulled from knowledge base */
   relevant_departments?: Department[]
+  /** Alias: some backend versions use 'departments' */
+  departments?: Department[]
   session_id: string
   /** Whether the response was generated in dev/mock mode */
   is_mock?: boolean
   /** Model identifier used for the response */
   model_used?: string
+  /** Confidence score (0–1) for the response */
+  confidence?: number
+  /** Language detected in the user query */
+  detected_language?: 'en' | 'es'
 }
 
 // ─── UI State ─────────────────────────────────────────────────────────────────

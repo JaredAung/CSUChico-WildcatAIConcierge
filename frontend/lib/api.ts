@@ -121,3 +121,22 @@ export async function checkHealth(): Promise<boolean> {
     return false
   }
 }
+
+/**
+ * Fetches suggested questions from the backend.
+ * Returns an empty array on failure (caller should fall back to defaults).
+ */
+export async function getSuggestedQuestions(): Promise<string[]> {
+  try {
+    const response = await fetchWithTimeout(
+      `${BASE_URL}/suggested-questions`,
+      { method: 'GET' },
+      5_000,
+    )
+    if (!response.ok) return []
+    const data = await response.json()
+    return Array.isArray(data?.questions) ? data.questions : []
+  } catch {
+    return []
+  }
+}
