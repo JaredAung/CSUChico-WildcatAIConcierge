@@ -143,7 +143,6 @@ async function consumeAgentCompletion(completion) {
   }
 
   for await (const event of completion) {
-    // ── Path 1: managed KB — citations embedded in chunk attribution ──────────
     const chunk = event.chunk
     if (chunk?.bytes) {
       answer += textDecoder.decode(chunk.bytes)
