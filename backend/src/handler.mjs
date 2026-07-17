@@ -680,11 +680,7 @@ export async function handleFileChat(query, file, sessionId) {
             content: userContentBlocks,
           },
         ],
-        system: [
-          {
-            text: 'You are the Wildcat AI Concierge for CSU Chico. Answer questions using the provided context and file content. Be helpful, accurate, and cite the knowledge base context when relevant.',
-          },
-        ],
+        system: [{ text: AGENT_INSTRUCTIONS }],
       }),
       { abortSignal: controller.signal },
     )
