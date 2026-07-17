@@ -23,6 +23,7 @@ import { MessageBubble } from '@/components/chat/MessageBubble'
 import { SourcePanel } from '@/components/chat/SourcePanel'
 import { WorkflowCard } from '@/components/chat/WorkflowCard'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
+import { FileUploader } from '@/components/chat/FileUploader'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DarkModeToggle } from '@/components/layout/Header'
 import { sendMessage } from '@/lib/api'
@@ -77,6 +78,8 @@ function ChatContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS)
   const [selectedLanguage, setSelectedLanguage] = useState<string>('auto')
+  const [attachedFile, setAttachedFile] = useState<{ content: string; mime_type: string; filename: string } | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
 
   const {
     isRecording,
@@ -129,6 +132,44 @@ function ChatContent() {
     }
   }, [micError])
 
+  // ── File attachment handlers ────────────────────────────────────────────────
+
+  const handleFileAttach = useCallback((file: { content: string; mime_type: string; filename: string }) => {
+    setAttachedFile(file)
+    // Create a preview URL for image files
+    if (file.mime_type.startsWith('image/')) {
+      const blob = (() => {
+        const byteCharacters = atob(file.content)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        return new Blob([new Uint8Array(byteNumbers)], { type: file.mime_type })
+      })()
+      const url = URL.createObjectURL(blob)
+      setFilePreviewUrl(url)
+    } else {
+      setFilePreviewUrl(null)
+    }
+  }, [])
+
+  const handleFileRemove = useCallback(() => {
+    setAttachedFile(null)
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl)
+      setFilePreviewUrl(null)
+    }
+  }, [filePreviewUrl])
+
+  // Clean up preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl)
+      }
+    }
+  }, [filePreviewUrl])
+
   // ── Core send logic ────────────────────────────────────────────────────────
 
   const handleSend = useCallback(
@@ -138,6 +179,9 @@ function ChatContent() {
 
       setInputValue('')
       setError(null)
+
+      // Capture the file at send time so we can clear it on success
+      const fileToSend = attachedFile
 
       const userMsg: DisplayMessage = {
         id: uuidv4(),
@@ -157,7 +201,7 @@ function ChatContent() {
       history.push({ role: 'user', content })
 
       try {
-        const response: ChatResponse = await sendMessage(history, sessionId)
+        const response: ChatResponse = await sendMessage(history, sessionId, fileToSend)
 
         // Keep Bedrock sessionId so later turns share answer/citation history.
         if (response.session_id && response.session_id !== sessionId) {
@@ -167,7 +211,7 @@ function ChatContent() {
         const assistantMsg: DisplayMessage = {
           id: uuidv4(),
           role: 'assistant',
-          content: response.answer,
+          content: response.answer || "I wasn't able to generate a response. Please try again.",
           timestamp: new Date().toISOString(),
           meta: {
             sources: response.sources ?? [],
@@ -177,17 +221,27 @@ function ChatContent() {
         }
 
         setMessages((prev) => [...prev, assistantMsg])
+
+        // Clear file attachment on successful send
+        if (fileToSend) {
+          setAttachedFile(null)
+          if (filePreviewUrl) {
+            URL.revokeObjectURL(filePreviewUrl)
+            setFilePreviewUrl(null)
+          }
+        }
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : 'Something went wrong. Please try again.'
         setError(msg)
+        // Preserve attachedFile on error — don't clear it
       } finally {
         setIsLoading(false)
         // Refocus input after response
         setTimeout(() => inputRef.current?.focus(), 50)
       }
     },
-    [inputValue, isLoading, messages, sessionId],
+    [inputValue, isLoading, messages, sessionId, attachedFile, filePreviewUrl],
   )
 
   // ── Keyboard handler ───────────────────────────────────────────────────────
@@ -347,6 +401,7 @@ function ChatContent() {
               <div key={msg.id} ref={isLastAssistant ? lastAssistantRef : undefined} className="flex flex-col gap-2">
                 <MessageBubble
                   message={msg}
+                  sources={msg.meta?.sources}
                   onThumbsUp={() => {}}
                   onThumbsDown={() => {}}
                 />
@@ -440,6 +495,16 @@ function ChatContent() {
             <label htmlFor="chat-input" className="sr-only">Type your message</label>
 
             <div className="input-card flex items-end gap-0 px-3 py-2">
+              {/* File uploader */}
+              <FileUploader
+                onFileAttach={handleFileAttach}
+                onFileRemove={handleFileRemove}
+                disabled={isLoading}
+                isUploading={isLoading && !!attachedFile}
+                attachedFile={attachedFile ? { filename: attachedFile.filename, mime_type: attachedFile.mime_type, previewUrl: filePreviewUrl ?? undefined } : null}
+                className="mr-1 mb-0.5"
+              />
+
               {/* Language selector */}
               <div className="flex items-center mr-2 mb-0.5">
                 <label htmlFor="language-select" className="sr-only">

@@ -26,6 +26,13 @@ export interface Source {
   relevance_score?: number
   /** Short excerpt from the source document */
   excerpt?: string
+  // New fields for inline citations
+  /** 1-based citation index for this source (min 1, max 50) */
+  citation_index?: number
+  /** Verbatim retrieved excerpt from the knowledge base (max 2000 chars) */
+  chunk_text?: string
+  /** Derived domain label from the source URL hostname (max 100 chars) */
+  domain_label?: string
 }
 
 // ─── Departments ──────────────────────────────────────────────────────────────

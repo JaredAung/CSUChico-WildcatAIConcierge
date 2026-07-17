@@ -3,10 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
-    "@aws-sdk/client-bedrock-agent-runtime": "^3.1087.0"
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.1087.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1087.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-bedrock-agent": "^3.1088.0"
+    "@aws-sdk/client-bedrock-agent": "^3.1088.0",
+    "vitest": "^3.1.4",
+    "fast-check": "^4.1.1"
   }
 }

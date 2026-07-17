@@ -52,6 +52,34 @@ const sourceTypeBadge: Record<string, 'default' | 'secondary' | 'info' | 'gold' 
   Document: 'secondary',
 }
 
+/**
+ * Determine if a citation_index is valid (positive integer).
+ */
+function hasValidCitationIndex(source: Source): boolean {
+  const idx = source.citation_index
+  return (
+    typeof idx === 'number' &&
+    Number.isFinite(idx) &&
+    Number.isInteger(idx) &&
+    idx >= 1
+  )
+}
+
+/**
+ * Truncate text to maxLen characters, appending ellipsis if truncated.
+ */
+function truncateText(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text
+  return text.slice(0, maxLen) + '\u2026'
+}
+
+/**
+ * Returns true if chunk_text has meaningful content (non-null, non-empty, non-whitespace-only).
+ */
+function hasChunkText(chunkText: string | null | undefined): boolean {
+  return typeof chunkText === 'string' && chunkText.trim().length > 0
+}
+
 // ─── SourcePanel ──────────────────────────────────────────────────────────────
 
 export function SourcePanel({ sources, departments = [], className }: SourcePanelProps) {
@@ -62,6 +90,12 @@ export function SourcePanel({ sources, departments = [], className }: SourcePane
   const hasContent = hasSources || hasDepts
 
   if (!hasContent) return null
+
+  // Split sources into cited (with valid citation_index) and uncited groups
+  const citedSources = sources
+    .filter(hasValidCitationIndex)
+    .sort((a, b) => a.citation_index! - b.citation_index!)
+  const uncitedSources = sources.filter((s) => !hasValidCitationIndex(s))
 
   const toggleId = `source-panel-toggle-${Math.random().toString(36).slice(2, 8)}`
   const regionId = `source-panel-region-${Math.random().toString(36).slice(2, 8)}`
@@ -116,12 +150,62 @@ export function SourcePanel({ sources, departments = [], className }: SourcePane
                 Source Documents
               </h3>
               <ul className="space-y-2" aria-label="Source documents">
-                {sources.map((source, i) => {
+                {/* ── Cited Sources (with citation_index) ──────────── */}
+                {citedSources.map((source, i) => (
+                  <li
+                    key={`cited-${i}`}
+                    className="rounded-md border border-border bg-background/60 px-3 py-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          {/* Numbered circle badge */}
+                          <span
+                            className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center shrink-0"
+                            aria-label={`Citation ${source.citation_index}`}
+                          >
+                            {source.citation_index}
+                          </span>
+                          {/* Domain label adjacent to badge */}
+                          {source.domain_label && source.domain_label.trim() !== '' && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {source.domain_label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium leading-tight truncate" title={source.title}>
+                          {source.title}
+                        </p>
+                        {/* Pull-quote from chunk_text */}
+                        {hasChunkText(source.chunk_text) && (
+                          <blockquote className="border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground italic mt-1 leading-relaxed">
+                            {truncateText(source.chunk_text!.trim(), 300)}
+                          </blockquote>
+                        )}
+                      </div>
+
+                      {source.url && (
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-primary hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                          aria-label={`Open ${source.title} (opens in new tab)`}
+                        >
+                          <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+
+                {/* ── Uncited Sources (without citation_index) ─────── */}
+                {uncitedSources.map((source, i) => {
                   const type = inferSourceType(source)
                   const badgeVariant = sourceTypeBadge[type] ?? 'secondary'
                   return (
                     <li
-                      key={i}
+                      key={`uncited-${i}`}
                       className="rounded-md border border-border bg-background/60 px-3 py-2"
                     >
                       <div className="flex items-start justify-between gap-2">
