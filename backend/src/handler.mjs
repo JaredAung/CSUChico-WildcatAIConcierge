@@ -2,13 +2,12 @@
  * API Gateway → Lambda → Bedrock Knowledge Base (Node.js)
  *
  * GET  /api/v1/health
- * POST /api/v1/chat  (RetrieveAndGenerate — answer + citations; multi-turn via sessionId)
+ * POST /api/v1/chat  (Retrieve + Converse — answer + citations; multi-turn via sessionId)
  */
 
 import { randomUUID } from 'node:crypto'
 import {
   BedrockAgentRuntimeClient,
-  RetrieveAndGenerateCommand,
   RetrieveCommand,
 } from '@aws-sdk/client-bedrock-agent-runtime'
 import {
@@ -24,26 +23,6 @@ const MODEL_ARN = (process.env.BEDROCK_MODEL_ARN || '').trim()
 const CONVERSE_MODEL_ID = (
   process.env.CONVERSE_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0'
 ).trim()
-
-const RAG_PROMPT_TEMPLATE = `${AGENT_INSTRUCTIONS}
-
-Use the search results below — and only the search results below — to answer the user's question.
-
-User question: $query$
-
-$search_results$
-
-Respond directly with the answer in markdown. Do not include any confidence scores, metadata, or preamble — just the helpful answer.`
-
-// Bedrock requires an orchestration template whenever the generation template is
-// customized. It must contain $conversation_history$ and $output_format_instructions$.
-const ORCHESTRATION_PROMPT_TEMPLATE = `Formulate a search query for the knowledge base based on the conversation history below, focused on retrieving information relevant to the latest message. If the user's message is not in English, translate the core intent into English for the search query.
-
-$query$
-
-$conversation_history$
-
-$output_format_instructions$`
 
 if (process.env.BEDROCK_API_KEY && !process.env.AWS_BEARER_TOKEN_BEDROCK) {
   process.env.AWS_BEARER_TOKEN_BEDROCK = process.env.BEDROCK_API_KEY
@@ -183,6 +162,200 @@ export function buildTextFragment(baseUrl, chunkText) {
 }
 
 /**
+ * Check whether a URL is a valid HTTP or HTTPS URL.
+ * Used to filter out S3 URIs, empty strings, and other non-HTTP URLs from sources.
+ * @param {string} url
+ * @returns {boolean}
+ */
+export function isHttpUrl(url) {
+  if (typeof url !== 'string') return false
+  return url.startsWith('http://') || url.startsWith('https://')
+}
+
+/**
+ * Strip trailing LLM-generated reference sections from the answer text.
+ * Matches variants: "References", "Sources", "📌 References", "Referencias"
+ * with optional heading markers (#, ##, ###).
+ *
+ * @param {string} answer - The answer text possibly containing a reference section
+ * @returns {string} Answer with reference section removed
+ */
+export function stripReferenceSection(answer) {
+  if (typeof answer !== 'string' || !answer) return answer || ''
+  return answer.replace(/\n+#{0,3}\s*(?:📌\s*)?(?:References|Sources|Referencias)\s*[\n:].*/si, '').trimEnd()
+}
+
+/**
+ * Extract the retrieval query from the conversation messages.
+ * Uses only the latest user message content for the knowledge base search.
+ *
+ * @param {Array<{role: string, content: string}>} messages
+ * @returns {string} The latest user message text, trimmed
+ */
+export function extractRetrievalQuery(messages) {
+  if (!Array.isArray(messages)) return ''
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i]
+    if (msg?.role === 'user' && typeof msg.content === 'string') {
+      return msg.content.trim()
+    }
+  }
+  return ''
+}
+
+/**
+ * Construct the numbered context string to inject into the Converse prompt.
+ * Format: "[Source 1]: <chunk text>\n\n[Source 2]: <chunk text>\n\n..."
+ *
+ * @param {Array} chunks - Raw retrieval results from RetrieveCommand
+ * @returns {string} Formatted context block (empty string if no chunks)
+ */
+export function buildContextBlock(chunks) {
+  if (!Array.isArray(chunks) || chunks.length === 0) return ''
+  return chunks
+    .map((chunk, i) => `[Source ${i + 1}]: ${chunk.content?.text || ''}`)
+    .join('\n\n')
+}
+
+/**
+ * Build the sources array from retrieved KB chunks.
+ * Deduplicates by normalized URL. Assigns citation_index matching the chunk's
+ * 1-based position. Populates title, url, domain_label, chunk_text, excerpt.
+ *
+ * @param {Array} chunks - Raw retrieval results from RetrieveCommand
+ * @returns {Array<Source>} Deduplicated, enriched source objects
+ */
+export function buildSources(chunks) {
+  if (!Array.isArray(chunks) || chunks.length === 0) return []
+
+  const seen = new Map() // normalizedUrl → source object
+  const sources = []
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]
+    const citationIndex = i + 1
+
+    // Resolve the URL: prefer web location, fall back to S3 metadata
+    let url = ''
+    const location = chunk?.location || {}
+    if (location.type === 'WEB' && location.webLocation?.url) {
+      url = location.webLocation.url
+    } else if (location.type === 'S3' || location.s3Location?.uri) {
+      // For S3 URIs, fall back to metadata web URL fields
+      const metadata = chunk?.metadata || {}
+      const metaSourceUrl = metadata.source_url || ''
+      const metaBedrockUri = metadata['x-amz-bedrock-kb-source-uri'] || ''
+      if (metaSourceUrl.startsWith('http')) {
+        url = metaSourceUrl
+      } else if (metaBedrockUri.startsWith('http')) {
+        url = metaBedrockUri
+      } else {
+        url = location.s3Location?.uri || ''
+      }
+    } else {
+      // Fallback: try metadata fields
+      const metadata = chunk?.metadata || {}
+      url = metadata.source_url || metadata['x-amz-bedrock-kb-source-uri'] || ''
+    }
+
+    // Filter out non-HTTP URLs (S3 URIs, empty strings, etc.)
+    if (!isHttpUrl(url)) continue
+
+    // Deduplicate by normalized URL — keep the first occurrence
+    const normalized = normalizeUrl(url)
+    if (normalized && seen.has(normalized)) continue
+    if (normalized) seen.set(normalized, true)
+
+    // Extract chunk text
+    const chunkText = String(chunk?.content?.text || '').trim()
+    const truncatedText = chunkText.slice(0, 400)
+
+    // Resolve title: metadata title → last path segment → fallback
+    const metadata = chunk?.metadata || {}
+    const metaTitle = String(metadata.title || '').trim()
+    let title = metaTitle
+    if (!title && url) {
+      try {
+        const pathname = new URL(url).pathname
+        const lastSegment = pathname.split('/').filter(Boolean).pop() || ''
+        title = lastSegment
+      } catch {
+        title = ''
+      }
+    }
+    if (!title) title = 'Campus document'
+
+    // Derive domain label
+    const domainLabel = deriveDomainLabel(url)
+
+    // Relevance score
+    const scoreRaw = metadata['x-amz-bedrock-kb-score'] ?? chunk?.score
+    const score = Number(scoreRaw)
+
+    sources.push({
+      title,
+      url,
+      citation_index: citationIndex,
+      chunk_text: truncatedText,
+      domain_label: domainLabel,
+      excerpt: truncatedText,
+      ...(Number.isFinite(score) ? { relevance_score: score } : {}),
+    })
+  }
+
+  return sources
+}
+
+/**
+ * Transform the client message history into Bedrock Converse API format.
+ * - Prior user/assistant turns become message objects with {role, content: [{text}]}
+ * - The final user message is augmented with the KB context block
+ * - Converse API requires messages to alternate user/assistant (we ensure this)
+ *
+ * @param {Array<{role: string, content: string}>} messages - Client message history
+ * @param {string} contextBlock - Numbered context from KB retrieval
+ * @returns {Array} Messages array conforming to Bedrock Converse API
+ */
+export function buildConverseMessages(messages, contextBlock) {
+  if (!Array.isArray(messages) || messages.length === 0) return []
+
+  // Filter to only user/assistant roles
+  const filtered = messages.filter(
+    (msg) => msg?.role === 'user' || msg?.role === 'assistant'
+  )
+
+  if (filtered.length === 0) return []
+
+  // Ensure alternating roles by merging consecutive same-role messages
+  const alternating = []
+  for (const msg of filtered) {
+    const last = alternating[alternating.length - 1]
+    if (last && last.role === msg.role) {
+      // Merge with previous message of the same role
+      last.content = `${last.content}\n${String(msg.content || '')}`
+    } else {
+      alternating.push({ role: msg.role, content: String(msg.content || '') })
+    }
+  }
+
+  // Transform into Converse API format
+  return alternating.map((msg, i) => {
+    const isLastUser = msg.role === 'user' && i === alternating.length - 1
+    let text = msg.content
+
+    // Augment the final user message with context block if available
+    if (isLastUser && contextBlock) {
+      text = `Context from knowledge base:\n${contextBlock}\n\nUser question: ${msg.content}`
+    }
+
+    return {
+      role: msg.role,
+      content: [{ text }],
+    }
+  })
+}
+
+/**
  * Process RetrieveAndGenerate citations with span data to inject [N] markers
  * into the answer text at the exact positions where citations apply.
  *
@@ -209,14 +382,26 @@ export function extractCitationsFromRAG(answerText, citations) {
     const citationIndices = new Set()
 
     for (const ref of refs) {
-      const uri =
-        ref.location?.s3Location?.uri ||
+      let uri =
         ref.location?.webLocation?.url ||
         ref.location?.confluenceLocation?.url ||
         ref.location?.salesforceLocation?.url ||
         ref.location?.sharePointLocation?.url ||
+        ref.location?.s3Location?.uri ||
         ''
-      if (!uri) continue
+
+      // Metadata web URL fallback for S3 URIs
+      if (uri.startsWith('s3://')) {
+        const metaSourceUrl = ref.metadata?.source_url || ''
+        const metaBedrockUri = ref.metadata?.['x-amz-bedrock-kb-source-uri'] || ''
+        if (metaSourceUrl.startsWith('http')) {
+          uri = metaSourceUrl
+        } else if (metaBedrockUri.startsWith('http')) {
+          uri = metaBedrockUri
+        }
+      }
+
+      if (!isHttpUrl(uri)) continue
 
       const normalized = normalizeUrl(uri)
       let idx = urlToIndex.get(normalized)
@@ -242,11 +427,10 @@ export function extractCitationsFromRAG(answerText, citations) {
         const scoreRaw = ref.metadata?.['x-amz-bedrock-kb-score']
         const score = Number(scoreRaw)
         const domainLabel = deriveDomainLabel(uri)
-        const fragmentUrl = buildTextFragment(uri, excerpt)
 
         sources.push({
           title,
-          url: fragmentUrl || uri,
+          url: uri,
           excerpt: excerpt ? excerpt.slice(0, 400) : undefined,
           citation_index: idx,
           chunk_text: excerpt ? excerpt.slice(0, 400) : '',
@@ -262,12 +446,20 @@ export function extractCitationsFromRAG(answerText, citations) {
     }
   }
 
+  // Detect trailing marker clusters BEFORE injecting
+  const originalLength = answerText.length
+  const threshold = Math.floor(originalLength * 0.95)
+  const trailingInsertions = insertions.filter(ins => ins.end >= threshold)
+  const skipTrailing = trailingInsertions.length >= 2
+
   // Sort insertions by end position descending (right-to-left preserves offsets)
   insertions.sort((a, b) => b.end - a.end)
 
-  // Inject [N] markers into the answer text
+  // Inject [N] markers into the answer text, skipping trailing cluster if detected
   let annotatedAnswer = answerText
   for (const { end, indices } of insertions) {
+    // Skip markers in the trailing cluster zone when cluster is detected
+    if (skipTrailing && end >= threshold) continue
     const sortedIndices = [...indices].sort((a, b) => a - b)
     const markers = sortedIndices.map(i => `[${i}]`).join('')
     // Insert markers at the span.end position
@@ -282,20 +474,6 @@ export function extractCitationsFromRAG(answerText, citations) {
 
 // ──────────────────────────────────────────────────────────────────────────────
 
-/**
- * Bedrock's RetrieveAndGenerate sessionId must be one Bedrock itself issued —
- * it rejects a client-generated ID. We don't track that server-side, so instead
- * fold the client's full message history into the query text on every call.
- */
-function buildQueryText(messages) {
-  if (!Array.isArray(messages)) return ''
-  return messages
-    .filter((msg) => msg?.role === 'user' || msg?.role === 'assistant')
-    .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${String(msg.content || '').trim()}`)
-    .filter((line) => line !== 'User:' && line !== 'Assistant:')
-    .join('\n')
-}
-
 /** Map KB citation refs → frontend Source[] with enriched fields. */
 function referencesToSources(citations) {
   const sources = []
@@ -304,13 +482,27 @@ function referencesToSources(citations) {
 
   for (const citation of citations || []) {
     for (const ref of citation.retrievedReferences || []) {
-      const uri =
-        ref.location?.s3Location?.uri ||
+      let uri =
         ref.location?.webLocation?.url ||
         ref.location?.confluenceLocation?.url ||
         ref.location?.salesforceLocation?.url ||
         ref.location?.sharePointLocation?.url ||
+        ref.location?.s3Location?.uri ||
         ''
+
+      // Metadata web URL fallback for S3 URIs
+      if (uri.startsWith('s3://')) {
+        const metaSourceUrl = ref.metadata?.source_url || ''
+        const metaBedrockUri = ref.metadata?.['x-amz-bedrock-kb-source-uri'] || ''
+        if (metaSourceUrl.startsWith('http')) {
+          uri = metaSourceUrl
+        } else if (metaBedrockUri.startsWith('http')) {
+          uri = metaBedrockUri
+        }
+      }
+
+      if (!isHttpUrl(uri)) continue
+
       const excerpt = String(ref.content?.text || '').trim()
       const metadataTitle =
         ref.metadata?.['x-amz-bedrock-kb-source-uri'] ||
@@ -328,11 +520,10 @@ function referencesToSources(citations) {
       const scoreRaw = ref.metadata?.['x-amz-bedrock-kb-score']
       const score = Number(scoreRaw)
       const domainLabel = deriveDomainLabel(uri)
-      const fragmentUrl = buildTextFragment(uri, excerpt)
 
       sources.push({
         title,
-        url: fragmentUrl || uri,
+        url: uri,
         excerpt: excerpt ? excerpt.slice(0, 400) : undefined,
         citation_index: citationIndex,
         chunk_text: excerpt ? excerpt.slice(0, 400) : '',
@@ -342,6 +533,49 @@ function referencesToSources(citations) {
     }
   }
   return sources
+}
+
+/**
+ * Call Bedrock RetrieveCommand to get relevant KB chunks.
+ *
+ * @param {string} query - The retrieval search text
+ * @param {object} [options] - Optional config { numberOfResults: number, abortSignal: AbortSignal }
+ * @returns {Promise<Array>} Array of retrieval result objects from Bedrock
+ */
+export async function retrieveChunks(query, options = {}) {
+  const numberOfResults = options.numberOfResults || 5
+  const command = new RetrieveCommand({
+    knowledgeBaseId: KNOWLEDGE_BASE_ID,
+    retrievalQuery: { text: query },
+    retrievalConfiguration: {
+      vectorSearchConfiguration: { numberOfResults },
+    },
+  })
+  const result = await getAgentRuntime().send(command, {
+    abortSignal: options.abortSignal,
+  })
+  return result.retrievalResults || []
+}
+
+/**
+ * Call Bedrock ConverseCommand with the prepared messages and system prompt.
+ *
+ * @param {Array} converseMessages - Messages array for Converse API
+ * @param {AbortSignal} [abortSignal] - Optional abort signal for timeout
+ * @returns {Promise<string>} The model's text response
+ */
+export async function converseWithModel(converseMessages, abortSignal) {
+  const command = new ConverseCommand({
+    modelId: CONVERSE_MODEL_ID,
+    system: [{ text: AGENT_INSTRUCTIONS }],
+    messages: converseMessages,
+  })
+
+  const result = await getBedrockRuntime().send(command, { abortSignal })
+
+  return (
+    result.output?.message?.content?.map(block => block.text || '').join('') || ''
+  )
 }
 
 // ─── File Upload: Retrieve + Converse Flow ───────────────────────────────────
@@ -508,10 +742,10 @@ export async function handleFileChat(query, file, sessionId) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 async function handleChat(body) {
-  if (!KNOWLEDGE_BASE_ID || !MODEL_ARN) {
+  if (!KNOWLEDGE_BASE_ID) {
     return response(500, {
       detail:
-        'BEDROCK_KNOWLEDGE_BASE_ID and BEDROCK_MODEL_ARN must be set. Redeploy with knowledge base parameters.',
+        'BEDROCK_KNOWLEDGE_BASE_ID must be set. Redeploy with the knowledge base parameter.',
     })
   }
 
@@ -522,55 +756,59 @@ async function handleChat(body) {
   }
 
   const sessionId = body.session_id || randomUUID()
-  const query = buildQueryText(body.messages)
 
-  // Route to file upload flow if a valid file attachment is present
+  // Route file uploads to handleFileChat unchanged
   if (body.file && body.file.content && body.file.mime_type) {
+    const query = extractRetrievalQuery(body.messages)
     return handleFileChat(query, body.file, sessionId)
   }
 
-  try {
-    const result = await getAgentRuntime().send(
-      new RetrieveAndGenerateCommand({
-        input: { text: query },
-        retrieveAndGenerateConfiguration: {
-          type: 'KNOWLEDGE_BASE',
-          knowledgeBaseConfiguration: {
-            knowledgeBaseId: KNOWLEDGE_BASE_ID,
-            modelArn: MODEL_ARN,
-            retrievalConfiguration: {
-              vectorSearchConfiguration: {
-                numberOfResults: 10,
-              },
-            },
-            generationConfiguration: {
-              promptTemplate: { textPromptTemplate: RAG_PROMPT_TEMPLATE },
-            },
-            orchestrationConfiguration: {
-              promptTemplate: { textPromptTemplate: ORCHESTRATION_PROMPT_TEMPLATE },
-            },
-          },
-        },
-      }),
-    )
+  const TIMEOUT_MS = 30_000
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
-    const rawAnswer = String(result.output?.text || '').trim()
-    const { annotatedAnswer, sources } = extractCitationsFromRAG(rawAnswer, result.citations)
-    const answer = annotatedAnswer
+  try {
+    // Step 1: Extract retrieval query from latest user message
+    const query = extractRetrievalQuery(body.messages)
+
+    // Step 2: Retrieve relevant KB chunks
+    const chunks = await retrieveChunks(query, { abortSignal: controller.signal })
+
+    // Step 3: Build sources and context block
+    const sources = buildSources(chunks)
+    const contextBlock = buildContextBlock(chunks)
+
+    // Step 4: Build Converse messages with context
+    const converseMessages = buildConverseMessages(body.messages, contextBlock)
+
+    // Step 5: Call Converse model
+    const rawAnswer = await converseWithModel(converseMessages, controller.signal)
+
+    clearTimeout(timeout)
+
+    // Step 6: Post-process - strip any reference section
+    const answer = stripReferenceSection(rawAnswer)
 
     return response(200, {
-      answer:
-        answer ||
-        "I wasn't able to generate a response. Please try again.",
+      answer: answer || "I wasn't able to generate a response. Please try again.",
       sources,
       session_id: sessionId,
-      model_used: `bedrock-kb:${KNOWLEDGE_BASE_ID}`,
+      model_used: `bedrock-converse:${CONVERSE_MODEL_ID}`,
       is_mock: false,
     })
   } catch (err) {
+    clearTimeout(timeout)
+
+    if (err.name === 'AbortError' || controller.signal.aborted) {
+      console.error('Request timed out', err)
+      return response(504, {
+        detail: 'Request timed out. Please try again.',
+      })
+    }
+
     const code = err?.name || err?.Code || 'Error'
     const message = err?.message || String(err)
-    console.error('RetrieveAndGenerate failed', code, err)
+    console.error('Retrieve+Converse failed', code, err)
     return response(502, {
       detail: `Knowledge base request failed (${code}): ${message}`,
     })
@@ -588,12 +826,12 @@ export async function handler(event) {
 
   if (method === 'GET' && (path === '/api/v1/health' || path === '/health')) {
     return response(200, {
-      status: KNOWLEDGE_BASE_ID && MODEL_ARN ? 'ok' : 'misconfigured',
+      status: KNOWLEDGE_BASE_ID ? 'ok' : 'misconfigured',
       region: BEDROCK_REGION,
       runtime: 'nodejs',
       knowledge_base_id: KNOWLEDGE_BASE_ID || null,
-      model_arn: MODEL_ARN || null,
-      mode: 'retrieve-and-generate',
+      converse_model_id: CONVERSE_MODEL_ID || null,
+      mode: 'retrieve-and-converse',
     })
   }
 
