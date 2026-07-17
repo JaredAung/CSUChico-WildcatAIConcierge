@@ -1,0 +1,233 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test": {
+      "status": "passed",
+      "failingExample": "All 5 properties FAILED as expected, confirming the bugs exist:\n\n1. S3 URI chunks in buildSources: Counterexample: [\"s3://a-a/0.md\",\"          \"] — buildSources includes source with url \"s3://a-a/0.md\" (un-clickable S3 URI)\n\n2. Empty URL chunks in buildSources: Counterexample: [\"          \"] — buildSources includes source with url \"\" (empty string)\n\n3. Text fragments on HTTP URLs: Counterexample: [\"https://www.csuchico.edu/admissions\",\"AaA Aaa aaa\"] — buildSources emits url \"https://www.csuchico.edu/admissions#:~:text=AaA%20Aaa%20aaa\" (text fragment appended)\n\n4. S3 URI citations in extractCitationsFromRAG: Counterexample: [\"s3://aa-/a.pdf\",\"...\"] — extractCitationsFromRAG includes source with url \"s3://aa-/a.pdf#:~:text=Some%20chunk%20text%20from%20the%20knowledge%20base\" (S3 URI + text fragment)\n\n5. S3 URI citations in referencesToSources (via extractCitationsFromRAG): Counterexample: [[\"s3://a0a/a.txt\"],[\"AaA aaA aAA aaA\"],\"...\"] — extractCitationsFromRAG includes source with url \"s3://a0a/a.txt#:~:text=AaA%20aaA%20aAA%20aaA\" (S3 URI + text fragment)",
+      "lastRunTimestamp": 1784262039587
+    },
+    "2. Write preservation property tests (BEFORE implementing fix)": {
+      "status": "passed",
+      "lastRunTimestamp": 1784262172122
+    },
+    "3.5 Verify bug condition exploration test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1784262586215
+    },
+    "3.6 Verify preservation tests still pass": {
+      "status": "passed",
+      "lastRunTimestamp": 1784262618105
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261853836
+      },
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261861732
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922352
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261930350
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262054148
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261853882
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922384
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262057735
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262184278
+      }
+    ],
+    "3.1 Add `isHttpUrl` helper function": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261853918
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922417
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262188396
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262246401
+      }
+    ],
+    "3.2 Fix `buildSources` - add guard and remove `buildTextFragment` call": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854000
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922515
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262249946
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262336746
+      }
+    ],
+    "3.3 Fix `referencesToSources` - add guard and remove `buildTextFragment` call": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854033
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922548
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262340034
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262489135
+      }
+    ],
+    "3.4 Fix `extractCitationsFromRAG` - add guard and remove `buildTextFragment` call": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854067
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922585
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262492704
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262557064
+      }
+    ],
+    "3.5 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854099
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922616
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262560972
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262594765
+      }
+    ],
+    "3.6 Verify preservation tests still pass": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854133
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922650
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262598097
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262627156
+      }
+    ],
+    "4. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "3e6ba298-052f-4067-a0dc-fa040eba4049",
+        "chatSessionId": "sess_40d25d1b-dc2f-4305-a982-47783aa84169",
+        "timestamp": 1784261854167
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784261922683
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262631428
+      },
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262840719
+      }
+    ],
+    "3. Fix for source URL filtering": [
+      {
+        "executionId": "cc1cdada-b837-429b-a01e-d346b3f73c9f",
+        "chatSessionId": "sess_e7d0ea70-7ec9-4d0c-a16d-5d53517ba47a",
+        "timestamp": 1784262627214
+      }
+    ]
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test": {
+      "status": "passed",
+      "failingExample": "Property 2 (File size validation) failed as expected, confirming the bug:\n\nTest: \"MAX_FILE_SIZE should equal 3.5 MB (3.5 * 1024 * 1024)\"\n- Expected: 3670016 (3.5 * 1024 * 1024)\n- Received: 10485760 (10 * 1024 * 1024)\n\nTest: \"files between 3.5 MB and 10 MB should be rejected by MAX_FILE_SIZE\"\n- Counterexample: [3670017]\n- Seed: 1898445999, Path: \"0\"\n- A file of 3,670,017 bytes (~3.5 MB + 1 byte) passes validation when it should be rejected.\n- Property failed after 1 test — the very first generated file size above 3.5 MB is incorrectly accepted.\n\nProperty 1 (extractCitationsFromRAG) PASSED — function works locally (bug is undeployed code, not broken logic).",
+      "lastRunTimestamp": 1784251782594
+    },
+    "2. Write preservation property tests (BEFORE implementing fix)": {
+      "status": "passed",
+      "lastRunTimestamp": 1784251899983
+    },
+    "3.4 Verify bug condition exploration test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1784252193866
+    },
+    "3.5 Verify preservation tests still pass": {
+      "status": "passed",
+      "lastRunTimestamp": 1784252228983
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633488
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251641107
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251798693
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633576
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251805442
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251912814
+      }
+    ],
+    "3.1 Update prompt.mjs — Replace the `## Citations` section": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633615
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251929428
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251997083
+      }
+    ],
+    "3.2 Update FileUploader.tsx — Reduce MAX_FILE_SIZE to 3.5 MB": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633648
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252003798
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252090172
+      }
+    ],
+    "3.3 Update template.yaml — Add IAM permission and environment variable": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633692
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252096972
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252160960
+      }
+    ],
+    "3.4 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633725
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252167856
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252203110
+      }
+    ],
+    "3.5 Verify preservation tests still pass": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633757
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252207172
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252238927
+      }
+    ],
+    "4. Deploy to production": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633792
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252247356
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252479908
+      }
+    ],
+    "5. Checkpoint — Ensure all tests pass and deployment succeeds": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784251633825
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252483782
+      },
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252540662
+      }
+    ],
+    "3. Fix for citation deploy issues (prompt conflict, file size limit, IAM permission, env var)": [
+      {
+        "executionId": "ab45e6bc-6f8b-45e3-bb59-371ef21b9c49",
+        "chatSessionId": "sess_bb16e44d-545f-4268-aba7-8014c18ca2ff",
+        "timestamp": 1784252238965
+      }
+    ]
+  }
+}

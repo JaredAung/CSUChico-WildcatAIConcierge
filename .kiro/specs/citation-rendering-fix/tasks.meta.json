@@ -1,0 +1,183 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration tests": {
+      "status": "passed",
+      "failingExample": "All 3 properties FAILED as expected (confirming bugs exist):\n\n1. Trailing marker cluster:\n   Counterexample: answerText = \",aaaaaa...\" (100 chars), 2 citations with span.end=95 (at 95% threshold).\n   Result: 2 markers [1][1] injected at position 95 in trailing 5% of text. Expected 0 markers in trailing portion.\n\n2. Reference section passthrough:\n   Counterexample: answerText = \"This is a test answer about CSU Chico campus life and dining options nearby.\\n\\n📌 References\\n1. Source A\\n2. Source B\"\n   Result: Reference section pattern found in output (expected it to be stripped, but no stripping exists).\n\n3. S3 URI priority:\n   Counterexample: s3Uri = \"s3://aaa/0aa.md\", webUrl = \"https://www.csuchico.edu/page\"\n   Result: source.url = \"s3://aaa/0aa.md#:~:text=Some%20chunk%20text%20from%20the%20knowledge%20base\" (uses S3 URI instead of web URL due to || order prioritizing s3Location.uri over webLocation.url)",
+      "lastRunTimestamp": 1784255990103
+    },
+    "2. Write preservation property tests (BEFORE implementing fix)": {
+      "status": "passed",
+      "lastRunTimestamp": 1784256206857
+    },
+    "3.4 Verify bug condition exploration test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1784256598508
+    },
+    "3.5 Verify preservation tests still pass": {
+      "status": "passed",
+      "lastRunTimestamp": 1784256637294
+    }
+  },
+  "executionHistory": {
+    "1. Write bug condition exploration tests": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859492
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255881353
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256003767
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859538
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256010699
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256222839
+      }
+    ],
+    "3.1 Implement URL priority fix and metadata fallback": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859575
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256229793
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256327374
+      }
+    ],
+    "3.2 Implement trailing marker cluster detection and stripping": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859654
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256330676
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256385600
+      }
+    ],
+    "3.3 Implement `stripReferenceSection` post-processing in `handleChat`": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859682
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256388898
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256452271
+      }
+    ],
+    "3.4 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859707
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256461020
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256612887
+      }
+    ],
+    "3.5 Verify preservation tests still pass": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859731
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256616499
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256648303
+      }
+    ],
+    "4. Deploy": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859757
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256655487
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256770492
+      }
+    ],
+    "5. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784255859781
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256774236
+      },
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256818588
+      }
+    ],
+    "3. Fix citation rendering bugs": [
+      {
+        "executionId": "78bd54eb-8fd5-422d-8828-c1405ff205a2",
+        "chatSessionId": "sess_b2db8832-5e2a-40cc-a653-f56661879eab",
+        "timestamp": 1784256648334
+      }
+    ]
+  }
+}
