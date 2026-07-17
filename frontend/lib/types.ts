@@ -26,6 +26,13 @@ export interface Source {
   relevance_score?: number
   /** Short excerpt from the source document */
   excerpt?: string
+  // New fields for inline citations
+  /** 1-based citation index for this source (min 1, max 50) */
+  citation_index?: number
+  /** Verbatim retrieved excerpt from the knowledge base (max 2000 chars) */
+  chunk_text?: string
+  /** Derived domain label from the source URL hostname (max 100 chars) */
+  domain_label?: string
 }
 
 // ─── Departments ──────────────────────────────────────────────────────────────
@@ -97,13 +104,21 @@ export interface ChatResponse {
   sources: Source[]
   /** Populated when the query triggers a workflow */
   workflow_card?: WorkflowCard
+  /** Alias: some backend versions use 'workflow' */
+  workflow?: WorkflowCard
   /** Related departments pulled from knowledge base */
   relevant_departments?: Department[]
+  /** Alias: some backend versions use 'departments' */
+  departments?: Department[]
   session_id: string
   /** Whether the response was generated in dev/mock mode */
   is_mock?: boolean
   /** Model identifier used for the response */
   model_used?: string
+  /** Confidence score (0–1) for the response */
+  confidence?: number
+  /** Language detected in the user query */
+  detected_language?: 'en' | 'es'
 }
 
 // ─── UI State ─────────────────────────────────────────────────────────────────

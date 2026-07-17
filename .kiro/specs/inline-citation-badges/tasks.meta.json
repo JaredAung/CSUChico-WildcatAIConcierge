@@ -1,0 +1,484 @@
+{
+  "pbtResults": {
+    "1.4 Write property tests for `normalizeUrl`, `deriveDomainLabel`, and `buildTextFragment`": {
+      "status": "passed",
+      "lastRunTimestamp": 1784241332571
+    },
+    "2.3 Write property test for CitationBadge aria-label format": {
+      "status": "passed",
+      "lastRunTimestamp": 1784241350067
+    },
+    "2.4 Write property test for invalid citation index rejection": {
+      "status": "passed",
+      "lastRunTimestamp": 1784241404154
+    },
+    "1.5 Write property tests for `extractCitations` index assignment and marker insertion": {
+      "status": "passed",
+      "lastRunTimestamp": 1784241604761
+    },
+    "4.3 Write property test for citation marker parsing selectivity": {
+      "status": "passed",
+      "lastRunTimestamp": 1784242216078
+    },
+    "5.3 Write property test for text fragment URL consistency": {
+      "status": "passed",
+      "lastRunTimestamp": 1784242217109
+    },
+    "5.2 Write property tests for SourcePanel display truncation and ordering": {
+      "status": "passed",
+      "lastRunTimestamp": 1784242217815
+    }
+  },
+  "executionHistory": {
+    "1.1 Implement helper functions `normalizeUrl`, `deriveDomainLabel`, and `buildTextFragment` in `backend/src/handler.mjs`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852582
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240863513
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241049533
+      }
+    ],
+    "1.2 Implement `extractCitations(completion)` function in `backend/src/handler.mjs`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852634
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241054821
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241223028
+      }
+    ],
+    "1.3 Wire `extractCitations()` into `handleChat()` replacing existing `consumeAgentCompletion` + `referencesToSources` calls": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852678
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241227994
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241423240
+      }
+    ],
+    "1.4 Write property tests for `normalizeUrl`, `deriveDomainLabel`, and `buildTextFragment`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852754
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241228796
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241424152
+      }
+    ],
+    "1.5 Write property tests for `extractCitations` index assignment and marker insertion": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852913
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241433651
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241935238
+      }
+    ],
+    "2.1 Extend the `Source` interface in `frontend/lib/types.ts`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852947
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240864547
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241050455
+      }
+    ],
+    "2.2 Create `CitationBadge` component at `frontend/components/chat/CitationBadge.tsx`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240852991
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241055759
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241223802
+      }
+    ],
+    "2.3 Write property test for CitationBadge aria-label format": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853029
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241229631
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241425050
+      }
+    ],
+    "2.4 Write property test for invalid citation index rejection": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853075
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241230482
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241426057
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853132
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243386212
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243594964
+      }
+    ],
+    "4.1 Implement citation marker pre-processor and integrate into `MessageBubble.tsx`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853169
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241434416
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241936410
+      }
+    ],
+    "4.2 Update `chat/page.tsx` to pass `sources` to `MessageBubble`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853234
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241943874
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242113362
+      }
+    ],
+    "4.3 Write property test for citation marker parsing selectivity": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853280
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242118558
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242231064
+      }
+    ],
+    "5.1 Enhance `SourcePanel.tsx` to display citation badges and pull-quotes": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853314
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241944636
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242114290
+      }
+    ],
+    "5.2 Write property tests for SourcePanel display truncation and ordering": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853347
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242119474
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242231919
+      }
+    ],
+    "5.3 Write property test for text fragment URL consistency": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853380
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242120240
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242232733
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853425
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243599380
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243801795
+      }
+    ],
+    "7.1 Add defensive handling for missing/malformed backend response fields": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853461
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242240346
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242412082
+      }
+    ],
+    "7.2 Write unit tests for backward compatibility scenarios": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853497
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242416575
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242755615
+      }
+    ],
+    "8.1 Implement backend Retrieve + Converse flow in `backend/src/handler.mjs`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853542
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242417462
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242756513
+      }
+    ],
+    "8.2 Create `FileUploader` component at `frontend/components/chat/FileUploader.tsx`": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853591
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242761330
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242981034
+      }
+    ],
+    "8.3 Integrate `FileUploader` into `chat/page.tsx` and API layer": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853642
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242985231
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243192295
+      }
+    ],
+    "8.4 Write integration tests for file upload flow": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853681
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243196096
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243378512
+      }
+    ],
+    "9. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784240853718
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243805668
+      },
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784244036572
+      }
+    ],
+    "2. Frontend type extension and citation badge component": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241426117
+      }
+    ],
+    "1. Backend citation extraction and enrichment": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784241935287
+      }
+    ],
+    "4. ReactMarkdown citation pre-processor in MessageBubble": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242231166
+      }
+    ],
+    "5. Enhanced SourcePanel with citation context": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242232776
+      }
+    ],
+    "7. Backward compatibility and graceful degradation": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784242755697
+      }
+    ],
+    "8. File and image upload reach feature (Converse Flow)": [
+      {
+        "executionId": "a9399d46-7a25-4fcc-80c0-752fbbb2f2d1",
+        "chatSessionId": "sess_9fc0f88c-54b9-4f6a-89c8-0cc4b14844df",
+        "timestamp": 1784243378577
+      }
+    ]
+  }
+}

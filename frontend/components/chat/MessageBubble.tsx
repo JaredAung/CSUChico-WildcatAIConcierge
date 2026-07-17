@@ -1,17 +1,23 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import { Copy, Check, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn, formatTime } from '@/lib/utils'
-import type { ChatMessage } from '@/lib/types'
+import { CitationBadge } from './CitationBadge'
+import type { ChatMessage, Source } from '@/lib/types'
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface MessageBubbleProps {
   message: ChatMessage
+  /** Optional: sources array for inline citation badge rendering */
+  sources?: Source[]
+  /** Optional: detected language for display */
+  detectedLanguage?: 'en' | 'es'
   /** Optional: fired when user clicks thumbs-up */
   onThumbsUp?: (messageId?: string) => void
   /** Optional: fired when user clicks thumbs-down */
@@ -127,13 +133,85 @@ function FeedbackButtons({
   )
 }
 
+// ─── Citation Pre-Processor ───────────────────────────────────────────────────
+
+/**
+ * Pre-processes markdown content to replace valid `[N]` citation markers with
+ * `<cite-badge data-index="N"></cite-badge>` custom HTML elements that ReactMarkdown
+ * can render via a custom component map.
+ *
+ * Rules:
+ * - Only converts `[N]` where N is an integer 1–20 AND a source with matching
+ *   `citation_index` exists in the sources array.
+ * - Protects markdown links `[text](url)` from false-positive matches.
+ * - Passes through invalid patterns as plain text.
+ */
+export function preprocessCitationMarkers(content: string, sources: Source[]): string {
+  if (!sources || sources.length === 0) return content
+
+  // Build a set of valid citation indices present in the sources array
+  const validIndices = new Set<number>()
+  for (const source of sources) {
+    if (
+      typeof source.citation_index === 'number' &&
+      Number.isFinite(source.citation_index) &&
+      Number.isInteger(source.citation_index) &&
+      source.citation_index >= 1 &&
+      source.citation_index <= 20
+    ) {
+      validIndices.add(source.citation_index)
+    }
+  }
+
+  if (validIndices.size === 0) return content
+
+  // Replace valid [N] patterns while protecting markdown links.
+  // Strategy: match [N] only when NOT followed by ( (which would indicate a markdown link)
+  // The regex captures [integer] patterns not followed by (
+  const result = content.replace(
+    /\[(\d+)\](?!\()/g,
+    (match, numStr) => {
+      const n = parseInt(numStr, 10)
+      if (n >= 1 && n <= 20 && validIndices.has(n)) {
+        return `<cite-badge data-index="${n}"></cite-badge>`
+      }
+      // Invalid index — pass through as plain text
+      return match
+    }
+  )
+
+  return result
+}
+
 // ─── MessageBubble ────────────────────────────────────────────────────────────
 
-export function MessageBubble({ message, onThumbsUp, onThumbsDown, className }: MessageBubbleProps) {
+export function MessageBubble({ message, sources = [], detectedLanguage, onThumbsUp, onThumbsDown, className }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const timeLabel = message.timestamp
     ? formatTime(message.timestamp)
     : undefined
+
+  // Pre-process citation markers for assistant messages
+  const processedContent = useMemo(() => {
+    if (isUser) return message.content
+    return preprocessCitationMarkers(message.content, sources)
+  }, [message.content, sources, isUser])
+
+  // Build a lookup map from citation_index to source
+  const sourcesByIndex = useMemo(() => {
+    const map = new Map<number, Source>()
+    for (const source of sources) {
+      if (
+        typeof source.citation_index === 'number' &&
+        Number.isFinite(source.citation_index) &&
+        Number.isInteger(source.citation_index) &&
+        source.citation_index >= 1
+      ) {
+        map.set(source.citation_index, source)
+      }
+    }
+    return map
+  }, [sources])
 
   return (
     <div
@@ -169,12 +247,13 @@ export function MessageBubble({ message, onThumbsUp, onThumbsDown, className }: 
             // User messages: plain text
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (
-            // Assistant messages: markdown
+            // Assistant messages: markdown with citation badges
             <div className="prose max-w-none">
               <ReactMarkdown
+                rehypePlugins={[rehypeRaw]}
                 components={{
                   // Open all links in new tab
-                  a: ({ href, children, ...props }) => (
+                  a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: any }) => (
                     <a
                       href={href}
                       target="_blank"
@@ -185,9 +264,29 @@ export function MessageBubble({ message, onThumbsUp, onThumbsDown, className }: 
                       {children}
                     </a>
                   ),
+                  // Custom cite-badge component for inline citation rendering
+                  ...({
+                    'cite-badge': (props: any) => {
+                      const dataIndex = props['data-index']
+                      const index = typeof dataIndex === 'string' ? parseInt(dataIndex, 10) : Number(dataIndex)
+                      if (!Number.isFinite(index) || index < 1) return null
+
+                      const source = sourcesByIndex.get(index)
+                      if (!source) return null
+
+                      return (
+                        <CitationBadge
+                          index={index}
+                          domainLabel={source.domain_label || undefined}
+                          url={source.url || undefined}
+                          className="mx-0.5"
+                        />
+                      )
+                    },
+                  } as any),
                 }}
               >
-                {message.content}
+                {processedContent}
               </ReactMarkdown>
             </div>
           )}

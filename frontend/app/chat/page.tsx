@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Info,
   ChevronRight,
+  Mic,
+  MicOff,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -21,10 +23,12 @@ import { MessageBubble } from '@/components/chat/MessageBubble'
 import { SourcePanel } from '@/components/chat/SourcePanel'
 import { WorkflowCard } from '@/components/chat/WorkflowCard'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
+import { FileUploader } from '@/components/chat/FileUploader'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DarkModeToggle } from '@/components/layout/Header'
 import { sendMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useMicrophone } from '@/lib/hooks/useMicrophone'
 import type { ChatMessage, ChatResponse, Source, Department, WorkflowCard as WorkflowCardType } from '@/lib/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,7 +76,21 @@ function ChatContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [chips] = useState<string[]>(DEFAULT_CHIPS)
+  const [chips, setChips] = useState<string[]>(DEFAULT_CHIPS)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('auto')
+  const [attachedFile, setAttachedFile] = useState<{ content: string; mime_type: string; filename: string } | null>(null)
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
+
+  const {
+    isRecording,
+    transcript,
+    interimTranscript,
+    error: micError,
+    isSupported,
+    startRecording,
+    stopRecording,
+  } = useMicrophone()
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const lastAssistantRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -99,6 +117,59 @@ function ChatContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  // Sync inputValue with transcript while recording
+  useEffect(() => {
+    if (isRecording) {
+      const combined = transcript + (interimTranscript ? (transcript ? ' ' : '') + interimTranscript : '')
+      setInputValue(combined)
+    }
+  }, [isRecording, transcript, interimTranscript])
+
+  // Propagate mic errors to UI error state
+  useEffect(() => {
+    if (micError) {
+      setError(micError)
+    }
+  }, [micError])
+
+  // ── File attachment handlers ────────────────────────────────────────────────
+
+  const handleFileAttach = useCallback((file: { content: string; mime_type: string; filename: string }) => {
+    setAttachedFile(file)
+    // Create a preview URL for image files
+    if (file.mime_type.startsWith('image/')) {
+      const blob = (() => {
+        const byteCharacters = atob(file.content)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        return new Blob([new Uint8Array(byteNumbers)], { type: file.mime_type })
+      })()
+      const url = URL.createObjectURL(blob)
+      setFilePreviewUrl(url)
+    } else {
+      setFilePreviewUrl(null)
+    }
+  }, [])
+
+  const handleFileRemove = useCallback(() => {
+    setAttachedFile(null)
+    if (filePreviewUrl) {
+      URL.revokeObjectURL(filePreviewUrl)
+      setFilePreviewUrl(null)
+    }
+  }, [filePreviewUrl])
+
+  // Clean up preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (filePreviewUrl) {
+        URL.revokeObjectURL(filePreviewUrl)
+      }
+    }
+  }, [filePreviewUrl])
+
   // ── Core send logic ────────────────────────────────────────────────────────
 
   const handleSend = useCallback(
@@ -108,6 +179,9 @@ function ChatContent() {
 
       setInputValue('')
       setError(null)
+
+      // Capture the file at send time so we can clear it on success
+      const fileToSend = attachedFile
 
       const userMsg: DisplayMessage = {
         id: uuidv4(),
@@ -127,7 +201,7 @@ function ChatContent() {
       history.push({ role: 'user', content })
 
       try {
-        const response: ChatResponse = await sendMessage(history, sessionId)
+        const response: ChatResponse = await sendMessage(history, sessionId, fileToSend)
 
         // Keep Bedrock sessionId so later turns share answer/citation history.
         if (response.session_id && response.session_id !== sessionId) {
@@ -137,7 +211,7 @@ function ChatContent() {
         const assistantMsg: DisplayMessage = {
           id: uuidv4(),
           role: 'assistant',
-          content: response.answer,
+          content: response.answer || "I wasn't able to generate a response. Please try again.",
           timestamp: new Date().toISOString(),
           meta: {
             sources: response.sources ?? [],
@@ -147,17 +221,27 @@ function ChatContent() {
         }
 
         setMessages((prev) => [...prev, assistantMsg])
+
+        // Clear file attachment on successful send
+        if (fileToSend) {
+          setAttachedFile(null)
+          if (filePreviewUrl) {
+            URL.revokeObjectURL(filePreviewUrl)
+            setFilePreviewUrl(null)
+          }
+        }
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : 'Something went wrong. Please try again.'
         setError(msg)
+        // Preserve attachedFile on error — don't clear it
       } finally {
         setIsLoading(false)
         // Refocus input after response
         setTimeout(() => inputRef.current?.focus(), 50)
       }
     },
-    [inputValue, isLoading, messages, sessionId],
+    [inputValue, isLoading, messages, sessionId, attachedFile, filePreviewUrl],
   )
 
   // ── Keyboard handler ───────────────────────────────────────────────────────
@@ -168,6 +252,16 @@ function ChatContent() {
       handleSend()
     }
   }
+
+  // ── Mic toggle ─────────────────────────────────────────────────────────────
+
+  const handleMicToggle = useCallback(() => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording(selectedLanguage)
+    }
+  }, [isRecording, stopRecording, startRecording, selectedLanguage])
 
   // ── Textarea auto-resize ───────────────────────────────────────────────────
 
@@ -307,6 +401,7 @@ function ChatContent() {
               <div key={msg.id} ref={isLastAssistant ? lastAssistantRef : undefined} className="flex flex-col gap-2">
                 <MessageBubble
                   message={msg}
+                  sources={msg.meta?.sources}
                   onThumbsUp={() => {}}
                   onThumbsDown={() => {}}
                 />
@@ -399,7 +494,38 @@ function ChatContent() {
           >
             <label htmlFor="chat-input" className="sr-only">Type your message</label>
 
-            <div className="input-card flex items-end gap-0 px-4 py-2">
+            <div className="input-card flex items-end gap-0 px-3 py-2">
+              {/* File uploader */}
+              <FileUploader
+                onFileAttach={handleFileAttach}
+                onFileRemove={handleFileRemove}
+                disabled={isLoading}
+                isUploading={isLoading && !!attachedFile}
+                attachedFile={attachedFile ? { filename: attachedFile.filename, mime_type: attachedFile.mime_type, previewUrl: filePreviewUrl ?? undefined } : null}
+                className="mr-1 mb-0.5"
+              />
+
+              {/* Language selector */}
+              <div className="flex items-center mr-2 mb-0.5">
+                <label htmlFor="language-select" className="sr-only">
+                  Transcription language
+                </label>
+                <select
+                  id="language-select"
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  disabled={isRecording || isLoading}
+                  className="h-9 rounded-lg border border-input bg-transparent px-1.5 text-[11px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="en-US">EN</option>
+                  <option value="es-US">ES</option>
+                  <option value="zh-CN">中文</option>
+                  <option value="tl-PH">TL</option>
+                  <option value="vi-VN">VI</option>
+                </select>
+              </div>
+
               <textarea
                 id="chat-input"
                 ref={inputRef}
@@ -418,21 +544,52 @@ function ChatContent() {
                 )}
                 style={{ height: '40px' }}
               />
+
+              {/* Mic button */}
+              {isSupported && (
+                <button
+                  type="button"
+                  onClick={handleMicToggle}
+                  disabled={isLoading}
+                  aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
+                  title={isRecording ? 'Stop recording' : 'Start voice input'}
+                  className={cn(
+                    'ml-2 mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    isRecording
+                      ? 'bg-red-500 text-white shadow-md animate-pulse hover:bg-red-600'
+                      : 'bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80',
+                  )}
+                >
+                  {isRecording ? (
+                    <MicOff className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Mic className="w-4 h-4" aria-hidden="true" />
+                  )}
+                </button>
+              )}
+
+              {/* Send button */}
               <button
                 type="submit"
-                disabled={isLoading || !inputValue.trim()}
+                disabled={isLoading || !inputValue.trim() || isRecording}
                 aria-label="Send message"
                 title="Send (Enter)"
                 className={cn(
                   'ml-2 mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  inputValue.trim() && !isLoading
+                  inputValue.trim() && !isLoading && !isRecording
                     ? 'bg-gradient-to-br from-scarlet-600 to-scarlet-800 text-white shadow-md hover:shadow-lg hover:scale-105 active:scale-95'
                     : 'bg-muted text-muted-foreground cursor-not-allowed',
                 )}
               >
                 <Send className="w-4 h-4" aria-hidden="true" />
               </button>
+            </div>
+
+            {/* Accessible recording state announcement */}
+            <div className="sr-only" aria-live="polite" aria-atomic="true" role="status">
+              {isRecording ? 'Recording started' : transcript ? 'Recording stopped' : ''}
             </div>
 
             <p
