@@ -45,16 +45,16 @@ describe('FileUploader', () => {
     )
   })
 
-  it('shows error for file exceeding 10 MB', () => {
+  it('shows error for file exceeding 3.5 MB', () => {
     render(<FileUploader {...defaultProps} />)
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
 
-    // Create a file > 10 MB
-    const largeContent = new ArrayBuffer(10 * 1024 * 1024 + 1)
+    // Create a file > 3.5 MB
+    const largeContent = new ArrayBuffer(3.5 * 1024 * 1024 + 1)
     const file = new File([largeContent], 'large.png', { type: 'image/png' })
     fireEvent.change(input, { target: { files: [file] } })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('File exceeds 10 MB limit')
+    expect(screen.getByRole('alert')).toHaveTextContent('File exceeds 3.5 MB limit')
   })
 
   it('calls onFileAttach with base64 content for valid file', async () => {

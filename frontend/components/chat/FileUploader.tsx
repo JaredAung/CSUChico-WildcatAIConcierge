@@ -17,7 +17,7 @@ const ACCEPTED_TYPES = [
 
 const ACCEPTED_EXTENSIONS = '.png,.jpg,.jpeg,.gif,.webp,.pdf'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+const MAX_FILE_SIZE = 3.5 * 1024 * 1024 // 3.5 MB
 
 const MAX_FILENAME_LENGTH = 30
 
@@ -94,7 +94,7 @@ export function FileUploader({
 
       // Validate file size
       if (file.size > MAX_FILE_SIZE) {
-        setError('File exceeds 10 MB limit')
+        setError('File exceeds 3.5 MB limit')
         return
       }
 
@@ -198,7 +198,7 @@ export function FileUploader({
           onClick={handleButtonClick}
           disabled={disabled || isUploading}
           aria-label="Attach file"
-          title="Attach file (PNG, JPEG, GIF, WebP, PDF — max 10 MB)"
+          title="Attach file (PNG, JPEG, GIF, WebP, PDF — max 3.5 MB)"
           className="text-muted-foreground hover:text-foreground"
         >
           {isUploading ? (
