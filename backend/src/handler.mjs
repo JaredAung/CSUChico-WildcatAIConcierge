@@ -186,6 +186,45 @@ export function stripReferenceSection(answer) {
 }
 
 /**
+ * Extract navigation intent from LLM response text.
+ * Detects [[NAV:destination]] markers, strips them from the text,
+ * and returns structured navigation data.
+ *
+ * @param {string} text - Raw LLM response
+ * @returns {{ cleanText: string, navigation: { wants_directions: boolean, destination_name: string } }}
+ */
+export function extractNavigation(text) {
+  const noIntent = { wants_directions: false, destination_name: '' }
+
+  if (typeof text !== 'string' || !text) {
+    return { cleanText: typeof text === 'string' ? text : '', navigation: noIntent }
+  }
+
+  const regex = /\[\[NAV:(.+?)\]\]/g
+  const firstMatch = regex.exec(text)
+
+  // Strip ALL [[NAV:...]] occurrences from text regardless of validity
+  const cleanText = text.replace(/\[\[NAV:(.+?)\]\]/g, '').trim()
+
+  if (!firstMatch) {
+    return { cleanText: text, navigation: noIntent }
+  }
+
+  // Extract destination from first capture group and trim whitespace
+  const destination = firstMatch[1].trim()
+
+  // Validate: empty, whitespace-only, or exceeds 200 chars → no intent
+  if (!destination || destination.length > 200) {
+    return { cleanText, navigation: noIntent }
+  }
+
+  return {
+    cleanText,
+    navigation: { wants_directions: true, destination_name: destination },
+  }
+}
+
+/**
  * Extract the retrieval query from the conversation messages.
  * Uses only the latest user message content for the knowledge base search.
  *
@@ -562,12 +601,13 @@ export async function retrieveChunks(query, options = {}) {
  *
  * @param {Array} converseMessages - Messages array for Converse API
  * @param {AbortSignal} [abortSignal] - Optional abort signal for timeout
+ * @param {string} [systemPrompt] - Optional system prompt override (defaults to AGENT_INSTRUCTIONS)
  * @returns {Promise<string>} The model's text response
  */
-export async function converseWithModel(converseMessages, abortSignal) {
+export async function converseWithModel(converseMessages, abortSignal, systemPrompt) {
   const command = new ConverseCommand({
     modelId: CONVERSE_MODEL_ID,
-    system: [{ text: AGENT_INSTRUCTIONS }],
+    system: [{ text: systemPrompt || AGENT_INSTRUCTIONS }],
     messages: converseMessages,
   })
 
@@ -735,6 +775,30 @@ export async function handleFileChat(query, file, sessionId) {
   }
 }
 
+// ─── User Location Validation ─────────────────────────────────────────────────
+
+/**
+ * Validate a user_location object from the request body.
+ * Returns { latitude, longitude } if both values are numeric and in valid range,
+ * or null if invalid/absent.
+ *
+ * @param {*} userLocation - The user_location field from the request body
+ * @returns {{ latitude: number, longitude: number } | null}
+ */
+export function validateUserLocation(userLocation) {
+  if (!userLocation || typeof userLocation !== 'object') return null
+
+  const lat = userLocation.latitude
+  const lng = userLocation.longitude
+
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (lat < -90 || lat > 90) return null
+  if (lng < -180 || lng > 180) return null
+
+  return { latitude: lat, longitude: lng }
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 
 async function handleChat(body) {
@@ -777,17 +841,28 @@ async function handleChat(body) {
     // Step 4: Build Converse messages with context
     const converseMessages = buildConverseMessages(body.messages, contextBlock)
 
-    // Step 5: Call Converse model
-    const rawAnswer = await converseWithModel(converseMessages, controller.signal)
+    // Step 5: Build system prompt with optional proximity context
+    const validLocation = validateUserLocation(body.user_location)
+    let systemPrompt = AGENT_INSTRUCTIONS
+    if (validLocation) {
+      systemPrompt += `\n\nUser's current location: latitude ${validLocation.latitude}, longitude ${validLocation.longitude}.\nWhen recommending places or services, prefer nearby options and include estimated walking distances.`
+    }
+
+    // Step 6: Call Converse model with augmented system prompt
+    const rawAnswer = await converseWithModel(converseMessages, controller.signal, systemPrompt)
 
     clearTimeout(timeout)
 
-    // Step 6: Post-process - strip any reference section
-    const answer = stripReferenceSection(rawAnswer)
+    // Step 7: Extract navigation intent from LLM response
+    const { cleanText, navigation } = extractNavigation(rawAnswer)
+
+    // Step 8: Strip any reference section from the clean text
+    const answer = stripReferenceSection(cleanText)
 
     return response(200, {
       answer: answer || "I wasn't able to generate a response. Please try again.",
       sources,
+      navigation,
       session_id: sessionId,
       model_used: `bedrock-converse:${CONVERSE_MODEL_ID}`,
       is_mock: false,

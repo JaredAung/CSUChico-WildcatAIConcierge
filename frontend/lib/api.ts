@@ -32,6 +32,7 @@ export function sanitizeChatResponse(raw: Partial<ChatResponse> | null | undefin
     answer: response.answer?.trim() || FALLBACK_ANSWER,
     sources: Array.isArray(response.sources) ? response.sources : [],
     session_id: response.session_id || generateLocalSessionId(),
+    navigation: response.navigation ?? undefined,
     workflow_card: response.workflow_card ?? undefined,
     workflow: response.workflow ?? undefined,
     relevant_departments: Array.isArray(response.relevant_departments) ? response.relevant_departments : undefined,
@@ -119,11 +120,13 @@ export async function sendMessage(
   messages: ChatMessage[],
   sessionId?: string,
   file?: { content: string; mime_type: string; filename: string } | null,
+  userLocation?: { latitude: number; longitude: number } | null,
 ): Promise<ChatResponse> {
   const body: ChatRequest & { file?: { content: string; mime_type: string; filename: string } } = {
     messages,
     ...(sessionId ? { session_id: sessionId } : {}),
     ...(file ? { file } : {}),
+    ...(userLocation ? { user_location: userLocation } : {}),
   }
 
   let response: Response

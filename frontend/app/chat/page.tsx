@@ -22,13 +22,16 @@ import { Separator } from '@/components/ui/separator'
 import { MessageBubble } from '@/components/chat/MessageBubble'
 import { SourcePanel } from '@/components/chat/SourcePanel'
 import { WorkflowCard } from '@/components/chat/WorkflowCard'
+import { DirectionsCard } from '@/components/chat/DirectionsCard'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { FileUploader } from '@/components/chat/FileUploader'
+import { LocationToggle } from '@/components/chat/LocationToggle'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DarkModeToggle } from '@/components/layout/Header'
 import { sendMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useMicrophone } from '@/lib/hooks/useMicrophone'
+import { useGeolocation } from '@/lib/hooks/useGeolocation'
 import type { ChatMessage, ChatResponse, Source, Department, WorkflowCard as WorkflowCardType } from '@/lib/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -37,6 +40,10 @@ interface AssistantMeta {
   sources: Source[]
   departments: Department[]
   workflow?: WorkflowCardType
+  navigation?: {
+    wants_directions: boolean
+    destination_name: string
+  }
 }
 
 interface DisplayMessage extends ChatMessage {
@@ -90,6 +97,8 @@ function ChatContent() {
     startRecording,
     stopRecording,
   } = useMicrophone()
+
+  const { coords, isEnabled: locationEnabled } = useGeolocation()
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const lastAssistantRef = useRef<HTMLDivElement>(null)
@@ -201,7 +210,12 @@ function ChatContent() {
       history.push({ role: 'user', content })
 
       try {
-        const response: ChatResponse = await sendMessage(history, sessionId, fileToSend)
+        const response: ChatResponse = await sendMessage(
+          history,
+          sessionId,
+          fileToSend,
+          locationEnabled && coords ? coords : null
+        )
 
         // Keep Bedrock sessionId so later turns share answer/citation history.
         if (response.session_id && response.session_id !== sessionId) {
@@ -217,6 +231,7 @@ function ChatContent() {
             sources: response.sources ?? [],
             departments: response.relevant_departments ?? [],
             workflow: response.workflow_card,
+            navigation: response.navigation,
           },
         }
 
@@ -241,7 +256,7 @@ function ChatContent() {
         setTimeout(() => inputRef.current?.focus(), 50)
       }
     },
-    [inputValue, isLoading, messages, sessionId, attachedFile, filePreviewUrl],
+    [inputValue, isLoading, messages, sessionId, attachedFile, filePreviewUrl, locationEnabled, coords],
   )
 
   // ── Keyboard handler ───────────────────────────────────────────────────────
@@ -417,6 +432,12 @@ function ChatContent() {
                     {msg.meta.workflow && (
                       <WorkflowCard workflow={msg.meta.workflow} />
                     )}
+                    {msg.meta.navigation?.wants_directions && (
+                      <DirectionsCard
+                        destination={msg.meta.navigation.destination_name}
+                        userLocation={locationEnabled && coords ? coords : null}
+                      />
+                    )}
                   </div>
                 )}
               </div>
@@ -504,6 +525,9 @@ function ChatContent() {
                 attachedFile={attachedFile ? { filename: attachedFile.filename, mime_type: attachedFile.mime_type, previewUrl: filePreviewUrl ?? undefined } : null}
                 className="mr-1 mb-0.5"
               />
+
+              {/* Location toggle */}
+              <LocationToggle />
 
               {/* Language selector */}
               <div className="flex items-center mr-2 mb-0.5">

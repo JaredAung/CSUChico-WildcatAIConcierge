@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { normalizeUrl, deriveDomainLabel, buildTextFragment, handleFileChat } from './handler.mjs'
+import { normalizeUrl, deriveDomainLabel, buildTextFragment, handleFileChat, validateUserLocation } from './handler.mjs'
 
 describe('normalizeUrl', () => {
   it('trims a single trailing slash', () => {
@@ -154,5 +154,71 @@ describe('handleFileChat', () => {
     expect(result.statusCode).toBe(500)
     const body = JSON.parse(result.body)
     expect(body.detail).toContain('BEDROCK_KNOWLEDGE_BASE_ID')
+  })
+})
+
+
+// ─── validateUserLocation tests ──────────────────────────────────────────────
+
+describe('validateUserLocation', () => {
+  it('returns coordinates for valid latitude and longitude', () => {
+    expect(validateUserLocation({ latitude: 39.7285, longitude: -121.7868 })).toEqual({
+      latitude: 39.7285,
+      longitude: -121.7868,
+    })
+  })
+
+  it('returns coordinates at boundary values', () => {
+    expect(validateUserLocation({ latitude: 90, longitude: 180 })).toEqual({ latitude: 90, longitude: 180 })
+    expect(validateUserLocation({ latitude: -90, longitude: -180 })).toEqual({ latitude: -90, longitude: -180 })
+    expect(validateUserLocation({ latitude: 0, longitude: 0 })).toEqual({ latitude: 0, longitude: 0 })
+  })
+
+  it('returns null when latitude is out of range', () => {
+    expect(validateUserLocation({ latitude: 91, longitude: 0 })).toBeNull()
+    expect(validateUserLocation({ latitude: -91, longitude: 0 })).toBeNull()
+  })
+
+  it('returns null when longitude is out of range', () => {
+    expect(validateUserLocation({ latitude: 0, longitude: 181 })).toBeNull()
+    expect(validateUserLocation({ latitude: 0, longitude: -181 })).toBeNull()
+  })
+
+  it('returns null for non-numeric latitude', () => {
+    expect(validateUserLocation({ latitude: 'abc', longitude: 0 })).toBeNull()
+    expect(validateUserLocation({ latitude: null, longitude: 0 })).toBeNull()
+    expect(validateUserLocation({ latitude: undefined, longitude: 0 })).toBeNull()
+  })
+
+  it('returns null for non-numeric longitude', () => {
+    expect(validateUserLocation({ latitude: 0, longitude: 'abc' })).toBeNull()
+    expect(validateUserLocation({ latitude: 0, longitude: null })).toBeNull()
+  })
+
+  it('returns null for NaN values', () => {
+    expect(validateUserLocation({ latitude: NaN, longitude: 0 })).toBeNull()
+    expect(validateUserLocation({ latitude: 0, longitude: NaN })).toBeNull()
+  })
+
+  it('returns null for Infinity values', () => {
+    expect(validateUserLocation({ latitude: Infinity, longitude: 0 })).toBeNull()
+    expect(validateUserLocation({ latitude: 0, longitude: -Infinity })).toBeNull()
+  })
+
+  it('returns null when user_location is null or undefined', () => {
+    expect(validateUserLocation(null)).toBeNull()
+    expect(validateUserLocation(undefined)).toBeNull()
+  })
+
+  it('returns null when user_location is not an object', () => {
+    expect(validateUserLocation('invalid')).toBeNull()
+    expect(validateUserLocation(123)).toBeNull()
+    expect(validateUserLocation(true)).toBeNull()
+  })
+
+  it('returns null when fields are missing', () => {
+    expect(validateUserLocation({})).toBeNull()
+    expect(validateUserLocation({ latitude: 39.7 })).toBeNull()
+    expect(validateUserLocation({ longitude: -121.7 })).toBeNull()
   })
 })

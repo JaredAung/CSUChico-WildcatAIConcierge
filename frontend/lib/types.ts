@@ -91,6 +91,11 @@ export interface WorkflowCard {
 export interface ChatRequest {
   messages: ChatMessage[]
   session_id?: string
+  /** Optional user geolocation for proximity-aware responses */
+  user_location?: {
+    latitude: number
+    longitude: number
+  }
   /** Optional CSU Chico department context hint */
   department_context?: string
 }
@@ -102,6 +107,11 @@ export interface ChatRequest {
 export interface ChatResponse {
   answer: string
   sources: Source[]
+  /** Navigation intent extracted from LLM response */
+  navigation?: {
+    wants_directions: boolean
+    destination_name: string
+  }
   /** Populated when the query triggers a workflow */
   workflow_card?: WorkflowCard
   /** Alias: some backend versions use 'workflow' */

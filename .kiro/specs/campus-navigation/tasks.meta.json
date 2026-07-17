@@ -1,0 +1,173 @@
+{
+  "pbtResults": {
+    "1.3 Write property tests for `buildMapLinks`": {
+      "status": "passed",
+      "lastRunTimestamp": 1784285652848
+    },
+    "4.5 Write property test for user location validation": {
+      "status": "passed",
+      "lastRunTimestamp": 1784285897374
+    },
+    "4.4 Write property tests for `extractNavigation`": {
+      "status": "passed",
+      "lastRunTimestamp": 1784285968190
+    }
+  },
+  "executionHistory": {
+    "1.1 Implement `useGeolocation` hook (`frontend/lib/hooks/useGeolocation.ts`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285326956
+      },
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285335877
+      }
+    ],
+    "1.2 Implement `buildMapLinks` utility (`frontend/lib/mapLinks.ts`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327106
+      },
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285336709
+      }
+    ],
+    "1.3 Write property tests for `buildMapLinks`": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327159
+      }
+    ],
+    "2.1 Implement `DirectionsCard` component (`frontend/components/chat/DirectionsCard.tsx`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327206
+      }
+    ],
+    "2.2 Implement `LocationToggle` component (`frontend/components/chat/LocationToggle.tsx`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327241
+      }
+    ],
+    "2.3 Write unit tests for DirectionsCard and LocationToggle": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327281
+      }
+    ],
+    "3. Checkpoint": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327339
+      }
+    ],
+    "4.1 Add navigation intent prompt instructions (`backend/src/prompt.mjs`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327411
+      },
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285337580
+      }
+    ],
+    "4.2 Implement `extractNavigation` function (`backend/src/handler.mjs`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327453
+      }
+    ],
+    "4.3 Add user location validation and proximity context injection (`backend/src/handler.mjs`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327491
+      }
+    ],
+    "4.4 Write property tests for `extractNavigation`": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327525
+      }
+    ],
+    "4.5 Write property test for user location validation": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327572
+      }
+    ],
+    "5. Checkpoint": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327638
+      }
+    ],
+    "6.1 Extend frontend types (`frontend/lib/types.ts`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327676
+      }
+    ],
+    "6.2 Update `sendMessage` in API layer (`frontend/lib/api.ts`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327708
+      }
+    ],
+    "6.3 Integrate location and navigation in chat page (`frontend/app/chat/page.tsx`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327741
+      }
+    ],
+    "7.1 Integrate DirectionsCard rendering (`frontend/app/chat/page.tsx`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327775
+      }
+    ],
+    "7.2 Wire backend response — call `extractNavigation` and include navigation in response (`backend/src/handler.mjs`)": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327808
+      }
+    ],
+    "7.3 Write integration tests for end-to-end navigation flow": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327873
+      }
+    ],
+    "8. Final checkpoint — end-to-end integration and polish": [
+      {
+        "executionId": "09e9a4aa-135d-4332-80f8-08db37643895",
+        "chatSessionId": "sess_f17deaf7-ce8f-4b5a-9dfa-4ab17ffdada2",
+        "timestamp": 1784285327909
+      }
+    ]
+  }
+}
