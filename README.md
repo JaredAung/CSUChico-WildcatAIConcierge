@@ -3,7 +3,7 @@
 Conversational access to campus services, policies, and facility resources.
 
 ## Presentation
-[Link to Google Drive](https://docs.google.com/presentation/d/17O6S3PHrk_1b0edRmpARNmfIlMaVWKwS/edit?slide=id.p1#slide=id.p1)
+[Link to Google Slides](https://docs.google.com/presentation/d/1-xGFHWhQPWJChK28VDnuPmtdYMDk_HnO/edit?slide=id.p1#slide=id.p1)
 
 ## Structure
 
